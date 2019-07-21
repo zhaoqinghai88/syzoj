@@ -67,3 +67,7 @@ start.sh
 log.txt
 
 # End of https://www.gitignore.io/api/vim
+
+
+# Docker 
+docker-compose.yml
