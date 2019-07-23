@@ -67,6 +67,15 @@ app.post('/api/forget', async (req, res) => {
 app.post('/api/sign_up', async (req, res) => {
   try {
     res.setHeader('Content-Type', 'application/json');
+
+    switch (syzoj.config.register_policy) {
+      case 'allow-all': break;
+      case 'deny-all': throw 2100;
+      case 'intranet-only':
+        if (!syzoj.utils.isIntranetIP(req.ip)) throw 2101;
+        break;
+    }
+
     let user = await User.fromName(req.body.username);
     if (user) throw 2008;
     user = await User.findOne({ where: { email: req.body.email } });

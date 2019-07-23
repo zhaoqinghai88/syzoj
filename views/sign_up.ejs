@@ -91,6 +91,12 @@ function submit() {
                 case 2010:
                     show_error("验证邮件发送失败：\n" + data.message);
                     break;
+                case 2100:
+                    show_error("暂未开放注册");
+                    break;
+                case 2101:
+                    show_error("仅允许内网用户注册");
+                    break;
                 case 1:
                     success();
                     break;
