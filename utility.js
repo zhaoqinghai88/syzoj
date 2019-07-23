@@ -335,7 +335,7 @@ module.exports = {
   },
   isIntranetIP(ip) {
     let tmp = ip.match(/\d+\.\d+\.\d+\.\d+/);
-    if (tmp) return this.isIntranetIPv4(tmp);
+    if (tmp) return this.isIntranetIPv4(tmp[0]);
     return ip.toLowerCase().startsWith('fd');
   }
 };
