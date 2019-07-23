@@ -324,13 +324,18 @@ module.exports = {
     if (hostOnly) return host;
     else return host + req.originalUrl;
   },
-  ip2int(ip) {
+  ipv42int(ip) {
     return ip.split('.').map((a) => parseInt(a)).reduce((a, b) => a * 256 + b);
   },
-  isIntranetIP(ip) {
-    let val = this.ip2int(ip);
+  isIntranetIPv4(ip) {
+    let val = this.ipv42int(ip);
     return (val >= 167772160 && val <= 184549375) ||   // 10.0.0.0    to 10.255.255.255
            (val >= 2886729728 && val <= 2887778303) || // 172.16.0.0  to 172.31.255.255
            (val >= 3232235520 && val <= 3232301055);   // 192.168.0.0 to 192.168.255.255
+  },
+  isIntranetIP(ip) {
+    let tmp = ip.match(/\d+\.\d+\.\d+\.\d+/);
+    if (tmp) return this.isIntranetIPv4(tmp);
+    return ip.toLowerCase().startsWith('fd');
   }
 };
