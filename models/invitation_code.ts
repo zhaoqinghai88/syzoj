@@ -25,21 +25,30 @@ export default class InvitationCode extends Model {
   enabled: boolean;
 
   creator?: User;
+  usernames?: InvitationCodeUsername[];
 
   static async fromCode(code): Promise<InvitationCode> {
-      return await InvitationCode.findOne({
-          where: { code: code }
-      });
-  }
-
-  async getUsernameMap(): Promise<InvitationCodeUsername[]> {
-      return await InvitationCodeUsername.find({
-          where: { code: this.code }
-      });
+    return await InvitationCode.findOne({
+      where: { code: code }
+    });
   }
 
   async loadRelationships(): Promise<void> {
-      this.creator = await User.findById(this.creator_id);
+    this.creator = await User.findById(this.creator_id);
+  }
+
+  async loadUsernames(): Promise<void> {
+    this.usernames = await InvitationCodeUsername.find({
+      where: { code: this.code }
+    });
+  }
+
+  async delete(): Promise<void> {
+    await InvitationCodeUsername.createQueryBuilder()
+      .delete()
+      .andWhere("`code` = :code", { code: this.code })
+      .execute();
+    await this.destroy();
   }
 
 }
