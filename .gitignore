@@ -71,3 +71,6 @@ log.txt
 
 # Docker 
 docker-compose.yml
+
+# App.js for debugging
+app-debug.js
