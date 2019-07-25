@@ -25,7 +25,7 @@ this.adminPage = 'invitation_code';
       <td>
         <a href="<%= syzoj.utils.makeUrl(['user', code.creator.id]) %>" target="_blank"><%= code.creator.username %></a>
       </td>
-      <td><%= code.creation_time.toLocaleString() %></td>
+      <td><%= syzoj.utils.formatTime(code.creation_time) %></td>
       <td style="text-align: center;">
         <% for (let item of code.usernames) { %>
           <div>
