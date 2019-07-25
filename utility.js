@@ -337,5 +337,14 @@ module.exports = {
     let tmp = ip.match(/\d+\.\d+\.\d+\.\d+/);
     if (tmp) return this.isIntranetIPv4(tmp[0]);
     return ip.toLowerCase().startsWith('fd');
+  },
+  striEquals(a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string') return false;
+    return a.toLowerCase() === b.toLowerCase();
+  },
+  checkCaptcha(req, field = "captcha") {
+    let result = this.striEquals(req.body[field], req.session.captcha);
+    req.session.captcha = null;
+    return result;
   }
 };

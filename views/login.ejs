@@ -23,6 +23,13 @@
               <input name="password" placeholder="密码" type="password" id="password" onkeydown="key_login(event)">
             </div>
           </div>
+          <div class="field">
+            <div class="ui left icon input">
+              <i class="hashtag icon"></i>
+              <input name="captcha" placeholder="验证码" autocomplete="off" type="text" id="captcha" onkeydown="key_login(event)">
+              <img class="img_captcha" src="/captcha" style="cursor: pointer;" onclick="updateCaptcha()">
+            </div>
+          </div>
           <div class="ui fluid large submit button" id="login">登录</div>
         </div>
 
@@ -59,7 +66,8 @@ function login() {
         type: 'POST',
         data: {
             "username": $("#username").val(),
-            "password": password
+            "password": password,
+            "captcha": $('#captcha').val()
         },
         async: true,
         success: function(data) {
@@ -74,6 +82,9 @@ function login() {
                 case 1003:
                     show_error("您尚未设置密码，请通过下方「找回密码」来设置您的密码。");
                     break;
+                case 3000:
+                    show_error("验证码错误");
+                    break;
                 case 1:
                     success(data.session_id);
                     return;
@@ -83,6 +94,7 @@ function login() {
             }
             $("#login").text("登录");
             $("#login").removeClass("loading");
+            updateCaptcha();
         },
         error:  function(XMLHttpRequest, textStatus, errorThrown) {
             alert(XMLHttpRequest.responseText);
@@ -96,5 +108,8 @@ $(document).ready(function() {
         login();
     });
 });
+function updateCaptcha() {
+  $('.img_captcha').prop('src', '/captcha?_=' + Math.random());
+}
 </script>
 <% include footer %>

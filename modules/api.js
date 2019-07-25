@@ -14,6 +14,9 @@ function setLoginCookie(username, password, res) {
 app.post('/api/login', async (req, res) => {
   try {
     res.setHeader('Content-Type', 'application/json');
+
+    if (!syzoj.utils.checkCaptcha(req)) throw 3000;
+
     let user = await User.fromName(req.body.username);
 
     if (!user) throw 1001;
@@ -77,6 +80,8 @@ app.post('/api/sign_up', async (req, res) => {
         if (!syzoj.utils.isIntranetIP(req.ip)) throw 2101;
         break;
     }
+
+    if (!syzoj.utils.checkCaptcha(req)) throw 3000;
 
     let invitation_code, code_item;
     if (syzoj.config.register_invitation_code) {
