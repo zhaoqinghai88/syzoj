@@ -46,7 +46,7 @@ export default class InvitationCode extends Model {
   async delete(): Promise<void> {
     await InvitationCodeUsername.createQueryBuilder()
       .delete()
-      .andWhere("`code` = :code", { code: this.code })
+      .where("`code` = :code", { code: this.code })
       .execute();
     await this.destroy();
   }
