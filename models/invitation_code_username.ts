@@ -12,7 +12,7 @@ export default class InvitationCodeUsername extends Model {
   @TypeORM.PrimaryColumn({ type: 'varchar', length: 40 })
   code: string;
 
-  @TypeORM.PrimaryColumn({ nullable: true, type: 'varchar', length: 80 })
+  @TypeORM.PrimaryColumn({ type: 'varchar', length: 80 })
   username: string;
 
   @TypeORM.Column({ nullable: true, type: 'integer' })
