@@ -11,5 +11,6 @@ app.get('/captcha', (req, res) => {
         fontSize: 45
     });
     req.session.captcha = captcha.text;
+    res.setHeader("Cache-Control", "no-cache");
     res.type('svg').send(captcha.data);
 });
