@@ -128,5 +128,6 @@
   "username_regex": "^[a-zA-Z0-9\\-\\_]+$",
   "site_for_download": "",
   "renderer_cache_size": "30000",
-  "register_policy": "allow-all"
+  "register_policy": "allow-all",
+  "register_invitation_code": true
 }
