@@ -24,6 +24,12 @@
                       <input type="password" placeholder="" id="password2">
                     </div>
                 </div>
+                <% if (syzoj.config.register_invitation_code) { %>
+                    <div class="field">
+                        <label for="invitation_code">邀请码</label>
+                        <input type="text" placeholder="" id="invitation_code">
+                    </div>
+                <% } %>
                 <a id="sign_up" class="ui button" href="javascript:submit();">注册</a>
             </form>
 </div>
@@ -62,6 +68,9 @@ function submit() {
           username: $("#username").val(),
           password: password,
           email: $("#email").val(),
+          <% if (syzoj.config.register_invitation_code) { %>
+            invitation_code: $('#invitation_code').val(),
+          <% } %>
           prevUrl: <%- serializejs(req.query.url || '/') %>
         },
         success: function(data) {
@@ -96,6 +105,18 @@ function submit() {
                     break;
                 case 2101:
                     show_error("仅允许内网用户注册");
+                    break;
+                case 2300:
+                    show_error("邀请码错误或与用户名不匹配");
+                    break;
+                case 2301:
+                    show_error("邀请码未启用");
+                    break;
+                case 2302:
+                    show_error("邀请码对应的用户名已被注册");
+                    break;
+                case 2303:
+                    show_error("请填写邀请码");
                     break;
                 case 1:
                     success();

@@ -1,6 +1,8 @@
 let User = syzoj.model('user');
 let Problem = syzoj.model('problem');
 let File = syzoj.model('file');
+let InvitationCode = syzoj.model('invitation_code');
+let InvitationCodeUsername = syzoj.model('invitation_code_username');
 const Email = require('../libs/email');
 const jwt = require('jsonwebtoken');
 
@@ -76,6 +78,22 @@ app.post('/api/sign_up', async (req, res) => {
         break;
     }
 
+    let invitation_code, code_item;
+    if (syzoj.config.register_invitation_code) {
+      if (!req.body.invitation_code) throw 2303;
+      invitation_code = await InvitationCode.fromCode(req.body.invitation_code);
+      if (!invitation_code) throw 2300;
+      if (!invitation_code.enabled) throw 2301;
+      code_item = await InvitationCodeUsername.findOne({
+        where: {
+          code: invitation_code.code,
+          username: req.body.username
+        }
+      });
+      if (!code_item) throw 2300;
+      if (code_item.used) throw 2302;
+    }
+
     let user = await User.fromName(req.body.username);
     if (user) throw 2008;
     user = await User.findOne({ where: { email: req.body.email } });
@@ -125,6 +143,14 @@ app.post('/api/sign_up', async (req, res) => {
         register_time: parseInt((new Date()).getTime() / 1000)
       });
       await user.save();
+
+      if (syzoj.config.register_invitation_code) {
+        invitation_code.usage_count++;
+        await invitation_code.save();
+        code_item.user_id = user.id;
+        code_item.used = true;
+        await code_item.save();
+      }
 
       req.session.user_id = user.id;
       setLoginCookie(user.username, user.password, res);

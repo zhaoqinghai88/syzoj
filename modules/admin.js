@@ -7,7 +7,11 @@ let UserPrivilege = syzoj.model('user_privilege');
 const RatingCalculation = syzoj.model('rating_calculation');
 const RatingHistory = syzoj.model('rating_history');
 let ContestPlayer = syzoj.model('contest_player');
+const InvitationCode = syzoj.model('invitation_code');
+const InvitationCodeUsername = syzoj.model('invitation_code_username');
 const calcRating = require('../libs/rating');
+
+const randomstring = require('randomstring');
 
 app.get('/admin/info', async (req, res) => {
   try {
@@ -486,5 +490,107 @@ app.get('/admin/serviceID', async (req, res) => {
     res.render('error', {
       err: e
     })
+  }
+});
+
+app.get('/admin/invitation_code', async (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let codes = await InvitationCode.find();
+    await codes.forEachAsync(async (code) => {
+      await code.loadRelationships();
+      await code.loadUsernames();
+    });
+
+    res.render('admin_invitation_code', {
+      codes: codes
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
+  }
+});
+
+app.post('/api/admin/invitation_code/create', async (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let usernames = req.body.usernames;
+    if (!Array.isArray(usernames)) throw new ErrorMessage("参数错误");
+
+    usernames = usernames.filter((username) => username);
+    if (!usernames.length) throw new ErrorMessage("至少要填写一个用户名");
+
+    await usernames.forEachAsync(async (username, index) => {
+      if (typeof username !== 'string') throw new ErrorMessage("参数错误");
+      if (!syzoj.utils.isValidUsername(username)) throw new ErrorMessage(username + " 不是一个合法的用户名");
+      if (index !== usernames.indexOf(username)) throw new ErrorMessage("用户名不能相同");
+      if (await User.fromName(username)) throw new ErrorMessage("用户 " + username + " 已存在");
+    });
+
+    let code = await InvitationCode.create({
+      code: randomstring.generate(8),
+      creator_id: res.locals.user.id,
+      creation_time: new Date(),
+      usage_count: 0,
+      enabled: true
+    });
+    await code.save();
+
+    await usernames.forEachAsync(async (username) => {
+      let item = await InvitationCodeUsername.create({
+        code: code.code,
+        username: username,
+        used: false
+      });
+      await item.save();
+    });
+
+    res.send({
+      error: '',
+      result: { code: code.code }
+    });
+
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});
+
+app.post('/api/admin/invitation_code/:code/:action', async (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let code = await InvitationCode.fromCode(req.params.code);
+    if (!code) throw new ErrorMessage("错误的邀请码。");
+
+    switch (req.params.action) {
+      case 'delete':
+        await code.delete();
+        break;
+      case 'enable':
+        code.enabled = true;
+        await code.save();
+        break;
+      case 'disable':
+        code.enabled = false;
+        await code.save();
+        break;
+      default:
+        throw new ErrorMessage("未知操作");
+    }
+
+    res.send({ error: null });
+
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
   }
 });
