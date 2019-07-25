@@ -6,8 +6,8 @@ app.get('/captcha', (req, res) => {
         noise: Math.floor(Math.random() * 2) + 1,
         color: true,
         background: '#f7f7f7',
-        width: 100,
-        height: 45,
+        width: 95,
+        height: 40,
         fontSize: 45
     });
     req.session.captcha = captcha.text;
