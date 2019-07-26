@@ -16,6 +16,7 @@ import * as path from "path";
 import * as util from "util";
 import * as LRUCache from "lru-cache";
 import * as DeepCopy from "deepcopy";
+import TodoList from "./todo-list";
 
 const problemTagCache = new LRUCache<number, number[]>({
   max: syzoj.config.db.cache_size
@@ -526,6 +527,16 @@ export default class Problem extends Model {
     problemTagCache.set(this.id, newTagIDs);
   }
 
+  async inTodoListOf(user): Promise<boolean> {
+    if (!user) return false;
+    return !!await TodoList.count({
+      where: {
+        user_id: user.id,
+        problem_id: this.id
+      }
+    });
+  }
+
   async changeID(id) {
     const entityManager = TypeORM.getManager();
 
@@ -609,6 +620,7 @@ export default class Problem extends Model {
     await entityManager.query('DELETE FROM `problem_tag_map`       WHERE `problem_id` = ' + this.id);
     await entityManager.query('DELETE FROM `article`               WHERE `problem_id` = ' + this.id);
     await entityManager.query('DELETE FROM `submission_statistics` WHERE `problem_id` = ' + this.id);
+    await entityManager.query('DELETE FROM `todo_list`             WHERE `problem_id` = ' + this.id);
 
     await this.destroy();
   }

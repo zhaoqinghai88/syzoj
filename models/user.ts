@@ -6,6 +6,7 @@ declare var syzoj: any;
 import JudgeState from "./judge_state";
 import UserPrivilege from "./user_privilege";
 import Article from "./article";
+import TodoList from "./todo-list";
 
 @TypeORM.Entity()
 export default class User extends Model {
@@ -143,6 +144,13 @@ export default class User extends Model {
     }
 
     return res;
+  }
+
+  async getTodoList(): Promise<number[]> {
+    let todoList =  await TodoList.find({
+      where: { user_id: this.id }
+    });
+    return todoList.map((item) => item.problem_id);
   }
 
   async renderInformation() {

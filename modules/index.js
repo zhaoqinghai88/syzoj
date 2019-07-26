@@ -40,6 +40,19 @@ app.get('/', async (req, res) => {
       title: problem.title,
       time: timeAgo.format(new Date(problem.publicize_time)),
     }));
+    
+    let todoList = null;
+    if (res.locals.user) {
+      let problem_ids = await res.locals.user.getTodoList();
+      todoList = await problem_ids.mapAsync(async (problem_id) => {
+        let problem = await Problem.findOne({
+          select: ["id", "title"],
+          where: { id: problem_id }
+        });
+        problem.judge_state = await problem.getJudgeState(res.locals.user, true);
+        return problem;
+      });
+    }
 
     res.render('index', {
       ranklist: ranklist,
@@ -47,6 +60,7 @@ app.get('/', async (req, res) => {
       fortune: fortune,
       contests: contests,
       problems: problems,
+      todoList: todoList,
       links: syzoj.config.links
     });
   } catch (e) {

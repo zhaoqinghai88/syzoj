@@ -103,8 +103,39 @@ if (contest) {
               <div class="floating ui red tiny circular label" style="background-color: #8c5633 !important; top: -0.6em; "><%= discussionCount %></div>
             <% } %>
           </a>
+          <% if (user) { %>
+            <% if (inTodoList) { %>
+              <a class="small ui red icon button button_todo_list button_todo_list_remove" data-action="remove" data-tooltip="从任务计划中删除">
+                <i class="minus icon"></i>
+              </a>
+            <% } else { %>
+              <a class="small ui blue icon button button_todo_list button_todo_list_add" data-action="add" data-tooltip="加入任务计划">
+                <i class="plus icon"></i>
+              </a>
+            <% } %>
+          <% } %>
         <% } %>
       </div>
+      <script type="text/javascript">
+        $('.button_todo_list').click(function() {
+          var $this = $(this);
+          var action = $this.attr('data-action');
+          $.ajax({
+            method: 'POST',
+            url: '/api/todo_list/' + action + '/' + <%= problem.id %>,
+            success: function(data) {
+              if (data.error) {
+                alert(data.error);
+              } else {
+                location.reload();
+              }
+            },
+            error: function(xhr) {
+              alert(xhr.responseText);
+            }
+          });
+        });
+      </script>
       <% if (!contest) { %>
         <div class="ui buttons right floated">
           <% if (problem.allowedEdit) { %>

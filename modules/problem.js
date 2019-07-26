@@ -221,12 +221,15 @@ app.get('/problem/:id', async (req, res) => {
 
     let discussionCount = await Article.count({ problem_id: id });
 
+    let inTodoList = await problem.inTodoListOf(res.locals.user);
+
     res.render('problem', {
       problem: problem,
       state: state,
       lastLanguage: res.locals.user ? await res.locals.user.getLastSubmitLanguage() : null,
       testcases: testcases,
-      discussionCount: discussionCount
+      discussionCount: discussionCount,
+      inTodoList: inTodoList
     });
   } catch (e) {
     syzoj.log(e);

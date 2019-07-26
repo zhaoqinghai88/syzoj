@@ -1,5 +1,6 @@
 <% this.title = '首页'; %>
 <% include header %>
+<% include util %>
 <div class="padding">
   <div class="ui three column grid">
     <div class="eleven wide column">
@@ -113,6 +114,80 @@
 	  </tbody>
 	</table>
       </div>
+      <% if (todoList && todoList.length) { %>
+      <h4 class="ui top attached block header"><i class="ui tasks icon"></i>任务计划</h4>
+      <div class="ui bottom attached segment">
+          <div class="todo_list">
+              <% for (let problem of todoList) { %>
+                <div class="todo_list_item" data-problem="<%= problem.id %>">
+                  <div style="text-align: center;">
+                    <% if (problem.judge_state) { %>
+                      <a href="<%= syzoj.utils.makeUrl(['submission', problem.judge_state.id]) %>">
+                        <span class="status <%= problem.judge_state.status.toLowerCase().split(' ').join('_') %>">
+                          <i class="<%= icon[problem.judge_state.status] || 'remove' %> icon"></i>
+                        </span>
+                      </a>
+                    <% } else { %>
+                      <i class="minus icon"></i>
+                    <% } %>
+                  </div>
+                  <div style="text-align: left;">
+                    <a href="<%= syzoj.utils.makeUrl(['problem', problem.id]) %>"><%= problem.id %>.&nbsp<%= problem.title %></a>
+                  </div>
+                  <div style="text-align: center;">
+                    <a class="button_todo_list_remove" data-tooltip="从任务计划中删除" href="javascript:void(0);">
+                      <i class="remove icon"></i>
+                    </a>
+                  </div>
+                </div>
+              <% } %>
+          </div>
+      </div>
+      <style type="text/css">
+        .todo_list_item {
+          display: flex;
+          margin: .25em;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .todo_list_item div:nth-child(2) {
+          margin-left: .5em;
+          margin-right: .5em;
+          flex-grow: 1;
+          flex-shrink: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .button_todo_list_remove {
+          color: #666;
+          transition: linear color 0.15s 0s;
+        }
+        .button_todo_list_remove:hover {
+          color: #db2828;
+        }
+      </style>
+      <script type="text/javascript">
+        $('.todo_list').on('click', '.button_todo_list_remove', function() {
+          var $item = $(this).parents('.todo_list_item');
+          var problem_id = $item.attr('data-problem');
+          $.ajax({
+            method: 'POST',
+            url: '/api/todo_list/remove/' + problem_id,
+            success: function(data) {
+              if (data.error) {
+                alert(data.error);
+              } else {
+                $item.remove();
+              }
+            },
+            error: function(xhr) {
+              alert(xhr.responseText);
+            }
+          });
+        });
+      </script>
+      <% } %>
         <%
         if (fortune) {
             let color;
