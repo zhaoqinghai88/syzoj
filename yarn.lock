@@ -2178,7 +2178,7 @@ markdown-it@^8.4.2:
     mdurl "^1.0.1"
     uc.micro "^1.0.5"
 
-"mathjax-node-page@github:Menci/mathjax-node-page#1a9093ddd4925ab42e96fb9fdd566db37e5f3597":
+mathjax-node-page@Menci/mathjax-node-page.git#1a9093ddd4925ab42e96fb9fdd566db37e5f3597:
   version "3.0.2"
   resolved "https://codeload.github.com/Menci/mathjax-node-page/tar.gz/1a9093ddd4925ab42e96fb9fdd566db37e5f3597"
   dependencies:
