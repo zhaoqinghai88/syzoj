@@ -147,12 +147,18 @@
           </div>
       </div>
       <style type="text/css">
+        .todo_list {
+          margin-left: .125em;
+          margin-right: .125em;
+        }
         .todo_list_item {
           display: flex;
-          margin: .25em;
           flex-direction: row;
           justify-content: space-between;
           align-items: center;
+        }
+        .todo_list_item:not(:first-child) {
+          margin-top: .75em;
         }
         .todo_list_item div:nth-child(2) {
           margin-left: .5em;
