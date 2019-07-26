@@ -595,7 +595,7 @@ async function setPublic(req, res, is_public) {
 async function setDataPublic(req, res, is_public) {
   try {
     let id = parseInt(req.params.id);
-    let problem = await Problem.fromID(id);
+    let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');
 
     let allowedManage = await problem.isAllowedManageBy(res.locals.user);
