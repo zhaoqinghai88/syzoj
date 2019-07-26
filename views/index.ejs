@@ -132,7 +132,7 @@
                     <% } %>
                   </div>
                   <div style="text-align: left;">
-                    <a href="<%= syzoj.utils.makeUrl(['problem', problem.id]) %>" data-tooltip="<%= problem.id + '. ' + problem.title %>"><%= problem.id + '. ' + problem.title %></a>
+                    <a href="<%= syzoj.utils.makeUrl(['problem', problem.id]) %>"><%= problem.id + '. ' + problem.title %></a>
                   </div>
                   <div style="text-align: center;">
                     <a class="button_todo_list_remove" data-tooltip="从任务计划中删除" href="javascript:void(0);">
@@ -156,9 +156,6 @@
           margin-right: .5em;
           flex-grow: 1;
           flex-shrink: 1;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
         }
         .button_todo_list_remove {
           color: #666;
