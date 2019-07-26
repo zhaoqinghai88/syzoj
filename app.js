@@ -228,7 +228,7 @@ global.syzoj = {
           next();
         });
       } else {
-        if (req.cookies.login) {
+        if (false && req.cookies.login) {
           let obj;
           try {
             obj = JSON.parse(req.cookies.login);
