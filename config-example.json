@@ -125,7 +125,7 @@
   },
   "no_cdn": false,
   "submissions_page_fast_pagination": false,
-  "username_regex": "^[a-zA-Z0-9\\-\\_]+$",
+  "username_regex": "^[a-zA-Z0-9\\-\\_]{3,16}$",
   "site_for_download": "",
   "renderer_cache_size": "30000",
   "register_policy": "allow-all",
