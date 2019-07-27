@@ -104,22 +104,41 @@ if (contest) {
             <% } %>
           </a>
           <% if (user) { %>
-            <% if (inTodoList) { %>
-              <a class="small ui red icon button button_todo_list button_todo_list_remove" data-action="remove" data-tooltip="从任务计划中删除">
-                <i class="minus icon"></i>
-              </a>
-            <% } else { %>
-              <a class="small ui blue icon button button_todo_list button_todo_list_add" data-action="add" data-tooltip="加入任务计划">
-                <i class="plus icon"></i>
-              </a>
-            <% } %>
+            <a class="small ui icon button button_todo_list" data-tooltip="">
+              <i class="icon"></i>
+            </a>
           <% } %>
         <% } %>
       </div>
       <script type="text/javascript">
+        var attributes = {
+          ".button_todo_list": {
+            "class": ["blue", "red"],
+            "data-action": ["add", "remove"],
+            "data-tooltip": ["加入任务计划", "从任务计划中删除"],
+          },
+          ".button_todo_list i": {
+            "class": ["plus", "minus"]
+          }
+        };
+        function updateTodoListButton(type) {
+          for (var selector in attributes) {
+            var $dom = $(selector);
+            for (var attrName in attributes[selector]) {
+              var attrValues = attributes[selector][attrName];
+              if (attrName === 'class') {
+                $dom.removeClass(attrValues[1 - type])
+                    .addClass(attrValues[type]);
+              } else {
+                $dom.attr(attrName, attrValues[type]);
+              }
+            }
+          }
+        }
         $('.button_todo_list').click(function() {
           var $this = $(this);
           var action = $this.attr('data-action');
+          $this.addClass("disabled");
           $.ajax({
             method: 'POST',
             url: '/api/todo_list/' + action + '/' + <%= problem.id %>,
@@ -127,14 +146,18 @@ if (contest) {
               if (data.error) {
                 alert(data.error);
               } else {
-                location.reload();
+                var type = action === 'add' ? 1 : 0;
+                updateTodoListButton(type);
               }
+              $this.removeClass("disabled");
             },
             error: function(xhr) {
               alert(xhr.responseText);
+              $this.removeClass("disabled");
             }
           });
         });
+        updateTodoListButton(<%= inTodoList ? 1 : 0 %>);
       </script>
       <% if (!contest) { %>
         <div class="ui buttons right floated">
