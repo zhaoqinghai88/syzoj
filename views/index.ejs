@@ -76,7 +76,7 @@
         </table>
       </div>
     </div>
-    <div class="right floated five wide column">
+    <div class="right floated five wide column side_bar">
         <h4 class="ui top attached block header"><i class="ui quote left icon"></i>一言（ヒトコト）</h4>
         <div class="ui bottom attached center aligned segment">
           <div class="ui active centered inline loader" id="hitokoto-loader"></div>
@@ -326,5 +326,62 @@ $(function () {
     }
   });
 });
+</script>
+<script type="text/javascript">
+  (function() {
+    const storageKey = 'syzoj_sidebar';
+    var $sidebar = $('.side_bar');
+    var $headers = $sidebar.find(".ui.top.attached.block.header");
+    var config = null;
+
+    // load the config
+    try {
+      config = JSON.parse(localStorage.getItem(storageKey));
+      if (!config || typeof config !== 'object') config = {};
+    } catch (err) {
+      config = {};
+    }
+
+    function saveConfig() {
+      localStorage.setItem(storageKey, JSON.stringify(config));
+    }
+
+    // apply saved config and register events
+    $headers.each(function(i, header) {
+      var $header = $(header);
+      var $segment = $header.next(".ui.bottom.attached.segment");
+      var name = $header.text().trim();
+      var hidden = false;
+
+      $header.css('cursor', 'pointer');
+
+      if (name in config) {
+        if (config[name] === "hide") {
+          $header.removeClass("top attached");
+          $segment.hide();
+          hidden = true;
+        }
+      } else {
+        config[name] = "show";
+      }
+
+      $header.click(function() {
+        if (hidden) {
+          $header.addClass("top attached");
+          $segment.slideDown();
+        } else {
+          $segment.slideUp(function() {
+            $header.removeClass("top attached");
+          });
+        }
+        hidden = !hidden;
+        config[name] = hidden ? "hide" : "show";
+        saveConfig();
+      });
+    });
+
+    saveConfig();
+
+  })();
 </script>
 <% include footer %>
