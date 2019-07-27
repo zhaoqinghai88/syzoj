@@ -303,7 +303,7 @@ code {
   background: rgba(128, 135, 139, 0.8);
 }
 
-.ui.block.header i.icon {
+.ui.top.attached.block.header i.icon {
   font-size: 1em;
   vertical-align: initial;
 }
