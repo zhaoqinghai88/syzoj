@@ -201,7 +201,10 @@ global.syzoj = {
     let FileStore = require('session-file-store')(Session);
     let sessionConfig = {
       secret: this.config.session_secret,
-      cookie: { httpOnly: false },
+      cookie: {
+        httpOnly: false,
+        maxAge: syzoj.config.session_max_age ? 1000 * syzoj.config.session_max_age : null
+      },
       rolling: true,
       saveUninitialized: true,
       resave: true,
