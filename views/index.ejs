@@ -135,7 +135,7 @@
                     <a href="<%= syzoj.utils.makeUrl(['problem', problem.id]) %>"><%= problem.id + '. ' + problem.title %></a>
                   </div>
                   <div style="text-align: center;">
-                    <a class="button_todo_list_remove" data-tooltip="从任务计划中删除" href="javascript:void(0);">
+                    <a class="button_todo_list_remove" href="javascript:void(0);">
                       <i class="remove icon"></i>
                     </a>
                   </div>
@@ -201,6 +201,12 @@
             error: function(xhr) {
               alert(xhr.responseText);
             }
+          });
+        });
+        $(function() {
+          $('.button_todo_list_remove').popup({
+            content: '从任务计划中删除',
+            position: 'top center'
           });
         });
       </script>
@@ -379,8 +385,10 @@ $(function () {
 
       $header.click(function() {
         if (hidden) {
-          $header.addClass("top attached");
-          $segment.slideDown();
+          $segment.queue(function(next) {
+            $header.addClass("top attached");
+            next();
+          }).slideDown();
         } else {
           $segment.slideUp(function() {
             $header.removeClass("top attached");
