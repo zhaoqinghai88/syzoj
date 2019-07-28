@@ -185,13 +185,17 @@
               if (data.error) {
                 alert(data.error);
               } else {
-                $item.remove();
-                if (!$('.todo_list_item').length) {
-                  $('.todo_list').append(
-                    $('<div>').css('text-align', 'center')
-                      .text('这里是空der~')
-                  );
-                }
+                $item.transition('fade left', {
+                  onComplete: function() {
+                    $item.remove();
+                    if (!$('.todo_list_item').length) {
+                      $('.todo_list').append(
+                        $('<div>').css('text-align', 'center')
+                          .text('这里是空der~')
+                      );
+                    }
+                  }
+                });
               }
             },
             error: function(xhr) {
