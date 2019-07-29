@@ -843,6 +843,8 @@ app.post('/problem/:id/testdata/delete/:filename', async (req, res) => {
     if (!problem) throw new ErrorMessage('无此题目。');
     if (!await problem.isAllowedEditBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
 
+    if (req.params.filename.includes('/') || req.params.filename.includes('\\')) throw new ErrorMessage("你想干啥？(●'ω'●)");
+
     await problem.deleteTestdataSingleFile(req.params.filename);
 
     res.redirect(syzoj.utils.makeUrl(['problem', id, 'testdata']));
