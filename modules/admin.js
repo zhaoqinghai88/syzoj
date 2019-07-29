@@ -644,3 +644,53 @@ app.post('/admin/bulk_register', async (req, res) => {
     });
   }
 });
+
+app.get('/admin/bulk_public', async (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+    res.render('admin_bulk_public', {
+      status: null
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
+  }
+});
+
+app.post('/admin/bulk_public', async (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let num_min = parseInt(req.body.number_min),
+        num_max = parseInt(req.body.number_max),
+        is_public = req.body.is_public === 'on',
+        is_data_public = req.body.is_data_public === 'on';
+    
+    if (isNaN(num_min) || isNaN(num_max) || num_min > num_max) throw new ErrorMessage("参数错误");
+    
+    let query = Problem.createQueryBuilder()
+                  .update()
+                  .set({
+                    is_public: is_public,
+                    is_data_public: is_data_public
+                  })
+                  .where("id BETWEEN :num_min AND :num_max", {
+                    num_min: num_min,
+                    num_max: num_max
+                  });
+    await query.execute();
+
+    res.render('admin_bulk_public', {
+      error_info: '操作成功。',
+      status: 'success'
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('admin_bulk_public', {
+      error_info: e.message,
+      status: 'failed'
+    });
+  }
+});
