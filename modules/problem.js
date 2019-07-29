@@ -318,7 +318,9 @@ app.post('/problem/:id/edit', async (req, res) => {
       problem = await Problem.create({
         time_limit: syzoj.config.default.problem.time_limit,
         memory_limit: syzoj.config.default.problem.memory_limit,
-        type: 'traditional'
+        type: 'traditional',
+        is_public: false,
+        is_data_public: true
       });
 
       if (await res.locals.user.hasPrivilege('manage_problem')) {
@@ -352,8 +354,6 @@ app.post('/problem/:id/edit', async (req, res) => {
     problem.example = req.body.example;
     problem.limit_and_hint = req.body.limit_and_hint;
     problem.is_anonymous = (req.body.is_anonymous === 'on');
-    problem.is_public = false;
-    problem.is_data_public = true;
 
     // Save the problem first, to have the `id` allocated
     await problem.save();
