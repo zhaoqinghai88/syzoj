@@ -111,14 +111,15 @@ if (contest) {
         <% } %>
       </div>
       <script type="text/javascript">
+        var problemSolved = <%= state && state.status === 'Accepted' ? 'true' : 'false' %>;
         var attributes = {
           ".button_todo_list": {
-            "class": ["blue", "red"],
+            "class": ["blue", problemSolved ? "green" : "red"],
             "data-action": ["add", "remove"],
-            "data-content": ["加入任务计划", "从任务计划中删除"]
+            "data-content": ["加入任务计划", problemSolved ? "完成任务" : "从任务计划中删除"]
           },
           ".button_todo_list i": {
-            "class": ["plus", "minus"]
+            "class": ["plus", problemSolved ? "check" : "minus"]
           }
         };
         function updateTodoListButton(type) {

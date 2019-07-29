@@ -121,7 +121,9 @@
               <% for (let problem of todoList) { %>
                 <div class="todo_list_item" data-problem="<%= problem.id %>">
                   <div style="text-align: center;">
+                    <% let accepted = false; %>
                     <% if (problem.judge_state) { %>
+                      <% if (problem.judge_state.status === 'Accepted') accepted = true; %>
                       <a href="<%= syzoj.utils.makeUrl(['submission', problem.judge_state.id]) %>">
                         <span class="status <%= problem.judge_state.status.toLowerCase().split(' ').join('_') %>">
                           <i class="<%= icon[problem.judge_state.status] || 'remove' %> icon"></i>
@@ -135,8 +137,8 @@
                     <a href="<%= syzoj.utils.makeUrl(['problem', problem.id]) %>"><%= problem.id + '. ' + problem.title %></a>
                   </div>
                   <div style="text-align: center;">
-                    <a class="button_todo_list_remove" href="javascript:void(0);">
-                      <i class="remove icon"></i>
+                    <a class="button_todo_list_remove" data-content="<%= accepted ? '完成任务' : '从任务计划中删除' %>" href="javascript:void(0);">
+                      <i class="<%= accepted ? 'check' : 'remove' %> icon"></i>
                     </a>
                   </div>
                 </div>
@@ -166,15 +168,16 @@
           flex-grow: 1;
           flex-shrink: 1;
         }
-        .button_todo_list_remove {
+        .button_todo_list_remove i {
+          margin: 0 !important;
           color: #666;
           transition: linear color 0.15s 0s;
         }
-        .button_todo_list_remove:hover {
-          color: #db2828;
+        .button_todo_list_remove:hover i.check.icon {
+          color: #21aa45;
         }
-        .button_todo_list_remove i {
-          margin: 0 !important;
+        .button_todo_list_remove:hover i.remove.icon {
+          color: #db2828;
         }
       </style>
       <script type="text/javascript">
@@ -208,7 +211,6 @@
         });
         $(function() {
           $('.button_todo_list_remove').popup({
-            content: '从任务计划中删除',
             position: 'top center'
           });
         });
