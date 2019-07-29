@@ -117,6 +117,7 @@ if (typeof tags !== 'undefined') tagIDs = tags.map(x => x.id);
             <td class="left aligned">
               <a style="vertical-align: middle; " href="<%= syzoj.utils.makeUrl(['problem', problem.id]) %>"><%= problem.title %>
                 <% if (!problem.is_public) { %><span class="ui header"><span class="ui tiny red label">未公开</span></span><% } %>
+                <% if (!problem.is_data_public) { %><span class="ui header"><span class="ui tiny orange label">数据未公开</span></span><% } %>
               </a>
               <div class="show_tag_controled" style="float: right; ">
                 <%
