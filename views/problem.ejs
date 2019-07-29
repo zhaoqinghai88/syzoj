@@ -110,62 +110,62 @@ if (contest) {
           <% } %>
         <% } %>
       </div>
-      <script type="text/javascript">
-        var problemSolved = <%= state && state.status === 'Accepted' ? 'true' : 'false' %>;
-        var attributes = {
-          ".button_todo_list": {
-            "class": ["blue", problemSolved ? "green" : "red"],
-            "data-action": ["add", "remove"],
-            "data-content": ["加入任务计划", problemSolved ? "完成任务" : "从任务计划中删除"]
-          },
-          ".button_todo_list i": {
-            "class": ["plus", problemSolved ? "check" : "minus"]
-          }
-        };
-        function updateTodoListButton(type) {
-          for (var selector in attributes) {
-            var $dom = $(selector);
-            for (var attrName in attributes[selector]) {
-              var attrValues = attributes[selector][attrName];
-              if (attrName === 'class') {
-                $dom.removeClass(attrValues[1 - type])
-                    .addClass(attrValues[type]);
-              } else {
-                $dom.attr(attrName, attrValues[type]);
-              }
-            }
-          }
-        }
-        $('.button_todo_list').click(function() {
-          var $this = $(this);
-          var action = $this.attr('data-action');
-          $this.addClass("disabled");
-          $.ajax({
-            method: 'POST',
-            url: '/api/todo_list/' + action + '/' + <%= problem.id %>,
-            success: function(data) {
-              if (data.error) {
-                alert(data.error);
-              } else {
-                var type = action === 'add' ? 1 : 0;
-                updateTodoListButton(type);
-              }
-              $this.removeClass("disabled");
-            },
-            error: function(xhr) {
-              alert(xhr.responseText);
-              $this.removeClass("disabled");
-            }
-          });
-        });
-        $(function() {
-          $('.button_todo_list').popup({
-            position: 'top center'
-          });
-        });
-        updateTodoListButton(<%= inTodoList ? 1 : 0 %>);
-      </script>
       <% if (!contest) { %>
+        <script type="text/javascript">
+          var problemSolved = <%= state && state.status === 'Accepted' ? 'true' : 'false' %>;
+          var attributes = {
+            ".button_todo_list": {
+              "class": ["blue", problemSolved ? "green" : "red"],
+              "data-action": ["add", "remove"],
+              "data-content": ["加入任务计划", problemSolved ? "完成任务" : "从任务计划中删除"]
+            },
+            ".button_todo_list i": {
+              "class": ["plus", problemSolved ? "check" : "minus"]
+            }
+          };
+          function updateTodoListButton(type) {
+            for (var selector in attributes) {
+              var $dom = $(selector);
+              for (var attrName in attributes[selector]) {
+                var attrValues = attributes[selector][attrName];
+                if (attrName === 'class') {
+                  $dom.removeClass(attrValues[1 - type])
+                      .addClass(attrValues[type]);
+                } else {
+                  $dom.attr(attrName, attrValues[type]);
+                }
+              }
+            }
+          }
+          $('.button_todo_list').click(function() {
+            var $this = $(this);
+            var action = $this.attr('data-action');
+            $this.addClass("disabled");
+            $.ajax({
+              method: 'POST',
+              url: '/api/todo_list/' + action + '/' + <%= problem.id %>,
+              success: function(data) {
+                if (data.error) {
+                  alert(data.error);
+                } else {
+                  var type = action === 'add' ? 1 : 0;
+                  updateTodoListButton(type);
+                }
+                $this.removeClass("disabled");
+              },
+              error: function(xhr) {
+                alert(xhr.responseText);
+                $this.removeClass("disabled");
+              }
+            });
+          });
+          $(function() {
+            $('.button_todo_list').popup({
+              position: 'top center'
+            });
+          });
+          updateTodoListButton(<%= inTodoList ? 1 : 0 %>);
+        </script>
         <div class="ui buttons right floated">
           <% if (problem.allowedEdit) { %>
             <a class="small ui button" href="<%= syzoj.utils.makeUrl(['problem', problem.id, 'edit']) %>">编辑</a>
