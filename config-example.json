@@ -130,5 +130,6 @@
   "renderer_cache_size": "30000",
   "register_policy": "allow-all",
   "register_invitation_code": true,
-  "session_max_age": null
+  "session_max_age": null,
+  "ranklist_rated_only": false
 }

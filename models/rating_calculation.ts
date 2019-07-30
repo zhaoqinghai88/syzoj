@@ -39,7 +39,12 @@ export default class RatingCalculation extends Model {
           rating_calculation_id: 'DESC'
         }
       }));
-      user.rating = ratingItem ? ratingItem.rating_after : syzoj.config.default.user.rating;
+      if (ratingItem) {
+        user.rating = ratingItem.rating_after;
+      } else {
+        user.rating = syzoj.config.default.user.rating;
+        user.is_rated = false;
+      }
       await user.save();
     }
     await this.destroy();

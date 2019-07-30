@@ -222,6 +222,7 @@ app.post('/admin/rating/add', async (req, res) => {
     for (let i = 0; i < newRating.length; i++) {
       const user = newRating[i].user;
       user.rating = newRating[i].currentRating;
+      user.is_rated = true;
       await user.save();
       const newHistory = await RatingHistory.create({
         rating_calculation_id: newcalc.id,
@@ -631,6 +632,7 @@ app.post('/admin/bulk_register', async (req, res) => {
         password: info.password,
         email: info.email,
         is_show: syzoj.config.default.user.show,
+        is_rated: false,
         rating: syzoj.config.default.user.rating,
         register_time: currentTime
       });
