@@ -2,6 +2,15 @@
 <% include header %>
 
 <div class="padding">
+  <% if (syzoj.config.ranklist_rated_only) { %>
+    <div class="ui info icon message">
+      <i class="lightbulb icon"></i>
+      <div class="content">
+        <div class="header">排行榜已被管理员设置为仅显示 rated 用户。</div>
+        <p>用户如果没有参加过计算了 rating 的比赛，将不会被列在这里。</p>
+      </div>
+    </div>
+  <% } %>
   <form action="<%= syzoj.utils.makeUrl(['find_user']) %>" class="ui mini form" method="get" role="form" style="margin-bottom: 25px; text-align: right; ">
     <div class="ui action left icon input inline" style="width: 180px; margin-right: 77px; ">
       <i class="search icon"></i><input name="nickname" placeholder="用户名" type="text">
