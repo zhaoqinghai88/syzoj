@@ -51,6 +51,32 @@
 
 <script src="<%- lib('blueimp-md5/2.10.0/js/md5.min.js') %>"></script>
 
+<script id="export-template" type="text/template">
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style type="text/css">
+      th, td {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <table border="1" frame="box" rules="all" cellpadding="0" callspacing="0">
+      <thead>
+        <tr>
+          <th>用户名</th>
+          <th>邮箱</th>
+          <th>初始密码</th>
+        </tr>
+      </thead>
+      <tbody>
+{{ content }}
+      </tbody>
+    </table>
+  </body>
+</html>
+</script>
 <script type="text/javascript">
   var lastType = null;
   function show_message(message, type) {
@@ -78,6 +104,16 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
+  function escape_html(str) {
+    return $('<span>').text(str).html();
+  }
+  function compile_template(template, options) {
+    return template.replace(/\{\{\s*[^}\s]+\s*\}\}/g, function(str) {
+      var param = str.slice(2, -2).trim();
+      return param in options ? options[param] : '';
+    });
+  }
+
   function get_input() {
     var result = {};
     var $inputs = $('.ui.form input[name]');
@@ -130,9 +166,6 @@
       );
     });
   }
-  function escape_html(str) {
-    return $('<span>').text(str).html();
-  }
   function export_data() {
     var options, data;
     try {
@@ -142,17 +175,14 @@
       show_message(err.message, "error");
       return;
     }
-    var lines = [['用户名', '邮箱', '初始密码']];
-    data.forEach(function(a) {
-      lines.push([a.username, a.email, a.password]);
-    });
-    var content = lines.map(function(line) {
-      return '<tr>' + line.map(function(str) {
-        return '<td>' + escape_html(str) + '</td>';
-      }).join('') + '</tr>';
+    var content = data.map(function(a) {
+      var cells = [a.username, a.email, a.password];
+      return '          <tr>\n' + cells.map(function(str) {
+        return '            <td>' + escape_html(str) + '</td>\n';
+      }).join('') + '          </tr>\n';
     }).join('');
-    var html = '<html><head><meta charset="utf-8"></head><body><table>' + content + '</table></body></html>';
-    download_file("users.xls", html, "application/vnd.ms-excel");
+    var html = compile_template($('#export-template').html(), { content: content });
+    download_file("users.xls", html.replace(/\n/g, '\r\n'), "application/vnd.ms-excel");
   }
   function submit() {
     var options, data;
@@ -163,6 +193,7 @@
       show_message(err.message, "error");
       return;
     }
+    if (!confirm("此操作将会注册 " + data.length + " 个用户。是否继续？\n建议在批量注册前先预览注册结果并导出用户信息。")) return;
     $("#btn_submit").addClass("loading disabled");
     data.forEach(function(a) {
       a.password = md5(a.password + 'syzoj2_xxx');

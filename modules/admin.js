@@ -11,6 +11,7 @@ const InvitationCode = syzoj.model('invitation_code');
 const InvitationCodeUsername = syzoj.model('invitation_code_username');
 const calcRating = require('../libs/rating');
 
+const TypeORM = require('typeorm');
 const randomstring = require('randomstring');
 
 app.get('/admin/info', async (req, res) => {
@@ -671,20 +672,25 @@ app.post('/admin/bulk_public', async (req, res) => {
     
     if (isNaN(num_min) || isNaN(num_max) || num_min > num_max) throw new ErrorMessage("参数错误");
     
-    let query = Problem.createQueryBuilder()
-                  .update()
-                  .set({
-                    is_public: is_public,
-                    is_data_public: is_data_public
-                  })
-                  .where("id BETWEEN :num_min AND :num_max", {
-                    num_min: num_min,
-                    num_max: num_max
-                  });
-    await query.execute();
+    let problems = await Problem.find({
+      where: { id: TypeORM.Between(num_min, num_max) }
+    });
+    console.log(`${num_min} - ${num_max}`, problems);
+    if (!problems.length) throw new ErrorMessage("没有符合要求的题目");
+
+    let now = new Date();
+    await problems.forEachAsync(async (problem) => {
+      problem.is_public = is_public;
+      problem.is_data_public = is_data_public;
+      if (is_public) {
+        problem.publicizer_id = res.locals.user.id;
+        problem.publicize_time = now;
+      }
+      await problem.save();
+    });
 
     res.render('admin_bulk_public', {
-      error_info: '操作成功。',
+      error_info: '操作成功，一共更改了 ' + problems.length + ' 道题目。',
       status: 'success'
     });
   } catch (e) {
