@@ -76,6 +76,7 @@ if (contest) {
   <div class="row">
     <div class="column">
       <div class="ui buttons">
+        <% let showTodoListBtn = false; %>
         <% if (typeof contest !== 'undefined' && contest) { %>
           <% if (!contest.ended) { %>
             <a class="small ui primary button" href="#submit_code">提交</a>
@@ -104,13 +105,14 @@ if (contest) {
             <% } %>
           </a>
           <% if (user) { %>
+            <% showTodoListBtn = true; %>
             <a class="small ui icon button button_todo_list" data-content="">
               <i class="icon"></i>
             </a>
           <% } %>
         <% } %>
       </div>
-      <% if (!contest) { %>
+      <% if (showTodoListBtn) { %>
         <script type="text/javascript">
           var problemSolved = <%= state && state.status === 'Accepted' ? 'true' : 'false' %>;
           var attributes = {
@@ -166,6 +168,8 @@ if (contest) {
           });
           updateTodoListButton(<%= inTodoList ? 1 : 0 %>);
         </script>
+      <% } %>
+      <% if (!contest) { %>
         <div class="ui buttons right floated">
           <% if (problem.allowedEdit) { %>
             <a class="small ui button" href="<%= syzoj.utils.makeUrl(['problem', problem.id, 'edit']) %>">编辑</a>
@@ -404,7 +408,7 @@ if (contest) {
     </div>
     <% } %>
 </div>
-
+<% if (!noSubmit) { %>
 <% if (problem.type !== 'submit-answer') { %>
 <script type="text/javascript">
   var editor;
@@ -455,5 +459,6 @@ if (contest) {
     $('#answer_by_editor').val(JSON.stringify(a));
   }
   </script>
+<% } %>
 <% } %>
 <% include footer %>
