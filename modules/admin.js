@@ -623,7 +623,8 @@ app.post('/admin/bulk_register', async (req, res) => {
     });
 
     var currentTime = parseInt((new Date()).getTime() / 1000);
-    await users.forEachAsync(async (info) => {
+    for (let i = 0; i < users.length; ++i) {
+      let info = users[i];
       var user = await User.create({
         username: info.username,
         password: info.password,
@@ -633,7 +634,7 @@ app.post('/admin/bulk_register', async (req, res) => {
         register_time: currentTime
       });
       await user.save();
-    });
+    }
 
     res.send({ error: null });
 
