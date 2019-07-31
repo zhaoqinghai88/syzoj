@@ -1,7 +1,8 @@
 <% this.adminPage = 'bulk_public'; %>
 <% include admin_header %>
 
-<div class="ui <%= status === 'success' ? 'positive' : status === 'failed' ? 'error' : '' %> message" style="flex-grow: 0; -webkit-flex-grow: 0;<% if (!status) { %> display: none;<% } %>">
+<div>
+<div class="ui <%= status === 'success' ? 'positive' : status === 'failed' ? 'error' : '' %> message"<% if (!status) { %> style="display: none;"<% } %>>
     <p id="error_info"><%= status ? error_info : '' %></p>
 </div>
 <form class="ui form" method="POST" action="<%= syzoj.utils.makeUrl(['admin', 'bulk_public']) %>">
@@ -29,5 +30,6 @@
     <input class="ui button" type="submit" value="确定">
   </div>
 </form>
+</div>
 
 <% include admin_footer %>
