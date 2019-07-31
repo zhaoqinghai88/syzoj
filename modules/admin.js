@@ -691,6 +691,12 @@ app.post('/admin/bulk_public', async (req, res) => {
       await problem.save();
     });
 
+    let query = JudgeState.createQueryBuilder()
+                          .update()
+                          .set({ is_public: is_public })
+                          .where({ problem_id: TypeORM.Between(num_min, num_max) });
+    query.execute();
+
     res.render('admin_bulk_public', {
       error_info: '操作成功，一共更改了 ' + problems.length + ' 道题目。',
       status: 'success'
