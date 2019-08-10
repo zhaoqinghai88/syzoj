@@ -10,7 +10,9 @@ const timeAgo = new TimeAgo('zh-CN');
 
 app.get('/', async (req, res) => {
   try {
-    let ranklist = await User.queryRange([1, syzoj.config.page.ranklist_index], { is_show: true }, {
+    let ranklist_where = { is_show: true };
+    if (syzoj.config.ranklist_rated_only) ranklist_where.is_rated = true;
+    let ranklist = await User.queryRange([1, syzoj.config.page.ranklist_index], ranklist_where, {
       [syzoj.config.sorting.ranklist.field]: syzoj.config.sorting.ranklist.order
     });
     await ranklist.forEachAsync(async x => x.renderInformation());
