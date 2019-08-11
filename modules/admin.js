@@ -221,13 +221,14 @@ app.post('/admin/rating/add', async (req, res) => {
     const newRating = calcRating(players);
     for (let i = 0; i < newRating.length; i++) {
       const user = newRating[i].user;
-      user.rating = newRating[i].currentRating;
+      const rating_after = Math.round(newRating[i].currentRating);
+      user.rating = rating_after;
       user.is_rated = true;
       await user.save();
       const newHistory = await RatingHistory.create({
         rating_calculation_id: newcalc.id,
         user_id: user.id,
-        rating_after: newRating[i].currentRating,
+        rating_after: rating_after,
         rank: newRating[i].rank
       });
       await newHistory.save();
