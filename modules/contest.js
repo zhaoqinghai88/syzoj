@@ -490,11 +490,19 @@ app.get('/contest/:id/problem/:pid', async (req, res) => {
     await problem.loadRelationships();
 
     contest.ended = contest.isEnded();
-    if (!await contest.isSupervisior(curUser) && !(contest.isRunning() || contest.isEnded())) {
+    try {
+      if (!await contest.isSupervisior(curUser) && !(contest.isRunning() || contest.isEnded())) {
+        throw new ErrorMessage('比赛尚未开始。');
+      }
+      if (!contest.is_public && (!res.locals.user || !res.locals.user.is_admin)) {
+        throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
+      }
+    } catch (err) {
       if (await problem.isAllowedUseBy(res.locals.user)) {
         return res.redirect(syzoj.utils.makeUrl(['problem', problem_id]));
+      } else {
+        throw err;
       }
-      throw new ErrorMessage('比赛尚未开始。');
     }
 
     problem.specialJudge = await problem.hasSpecialJudge();
