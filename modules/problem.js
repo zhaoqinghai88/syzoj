@@ -434,6 +434,8 @@ app.post('/problem/:id/import', async (req, res) => {
 
       problem.user_id = res.locals.user.id;
       problem.publicizer_id = res.locals.user.id;
+      problem.is_public = false;
+      problem.is_data_public = true;
     } else {
       if (!await problem.isAllowedUseBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
       if (!await problem.isAllowedEditBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
