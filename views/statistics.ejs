@@ -81,7 +81,7 @@ function getColorOfScore(score) {
                   </span>
                   </b>
               </a></td>
-              <td><a href="<%= syzoj.utils.makeUrl(['submission', judge.id]) %>"><span class="score score_<%= parseInt(judge.score / 10) || 0 %>"><%= judge.score %></span></a></td>
+              <td><a href="<%= syzoj.utils.makeUrl(['submission', judge.id]) %>"><span class="score score_<%= Math.min(10, parseInt(judge.score / 10) || 0) %>"><%= judge.score %></span></a></td>
               <% if (problem.type !== 'submit-answer') { %>
                 <td><%= judge.total_time %> ms</td>
                 <td><%= parseInt(judge.max_memory) || 0 %> K</td>
