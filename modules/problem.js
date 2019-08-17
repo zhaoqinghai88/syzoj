@@ -12,6 +12,27 @@ const jwt = require('jsonwebtoken');
 let Judger = syzoj.lib('judger');
 let CodeFormatter = syzoj.lib('code_formatter');
 
+function sortTagList(tags) {
+  const order = syzoj.config.problem_tag_colors;
+  tags.sort((a, b) => {
+    let x = order.indexOf(a.color);
+    let y = order.indexOf(b.color);
+    if (x === -1) x = order.length;
+    if (y === -1) y = order.length;
+    if (x < y) return -1;
+    if (x > y) return 1;
+    if (a.name < b.name) return -1;
+    if (a.name > b.name) return 1;
+    return 0;
+  });
+}
+
+async function getAllTags() {
+  let tags = await ProblemTag.find();
+  sortTagList(tags);
+  return tags;
+}
+
 app.get('/problems', async (req, res) => {
   try {
     const sort = req.query.sort || syzoj.config.sorting.problem.field;
@@ -45,7 +66,7 @@ app.get('/problems', async (req, res) => {
       problem.tags = await problem.getTags();
     });
 
-    let allTags = await ProblemTag.find();
+    let allTags = await getAllTags();
 
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
@@ -126,8 +147,9 @@ app.get('/problems/search', async (req, res) => {
   }
 });
 
-app.get('/problems/tag/:tagIDs', async (req, res) => {
+app.get('/problems/tag/:tagIDs', async (req, res, next) => {
   try {
+    if (!/^[\d,]+$/.test(req.params.tagIDs)) return next();
     let tagIDs = Array.from(new Set(req.params.tagIDs.split(',').map(x => parseInt(x))));
     let tags = await tagIDs.mapAsync(async tagID => ProblemTag.findById(tagID));
     const sort = req.query.sort || syzoj.config.sorting.problem.field;
@@ -180,7 +202,9 @@ app.get('/problems/tag/:tagIDs', async (req, res) => {
       return problem;
     });
 
-    let allTags = await ProblemTag.find();
+    sortTagList(tags);
+
+    let allTags = await getAllTags();
 
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),

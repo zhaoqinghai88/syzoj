@@ -1,15 +1,15 @@
-<% this.title = '编辑标签' %>
+<% this.title = '批量添加标签' %>
 <% include header %>
 <div class="padding">
-  <form class="ui form" action="<%= syzoj.utils.makeUrl(['problems', 'tag', tag.id, 'edit']) %>" method="post">
+  <form class="ui form" action="<%= syzoj.utils.makeUrl(['problems', 'tag', 'bulk_create']) %>" method="post">
       <div class="field">
-          <label>标签名称</label>
-          <input type="text" name="name" value="<%= tag.name %>">
+          <label>标签名称（一行一个）</label>
+          <textarea cols="8" type="text" name="names"></textarea>
       </div>
       <div class="field">
           <label>标签颜色</label>
           <div class="ui fluid selection dropdown" id="tag_color">
-            <input type="hidden" name="color" value="<%= tag.color %>">
+            <input type="hidden" name="color">
             <i class="dropdown icon"></i>
             <div class="default text">选择颜色</div>
             <div class="menu">
@@ -23,11 +23,9 @@
           </div>
       </div>
       <div style="text-align: center; ">
-      <% if (isNewTag) { %>
-      <a href="<%= syzoj.utils.makeUrl(['problems', 'tag', 'bulk_create']) %>" class="ui labeled icon button" style="margin-right: 2em;">
-        <i class="icon arrow right"></i> 批量添加标签
+      <a href="<%= syzoj.utils.makeUrl(['problems', 'tag', 0, 'edit']) %>" class="ui labeled icon button" style="margin-right: 2em;">
+        <i class="icon arrow right"></i> 添加单个标签
       </a>
-      <% } %>
       <button type="submit" class="ui labeled primary submit icon button">
         <i class="icon edit"></i> 提交
       </button>

@@ -131,5 +131,20 @@
   "register_policy": "allow-all",
   "register_invitation_code": true,
   "session_max_age": null,
-  "ranklist_rated_only": false
+  "ranklist_rated_only": false,
+  "problem_tag_colors": [
+    "red",
+    "orange",
+    "yellow",
+    "olive",
+    "green",
+    "teal",
+    "blue",
+    "violet",
+    "purple",
+    "pink",
+    "brown",
+    "grey",
+    "black"
+  ]
 }
