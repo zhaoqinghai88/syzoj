@@ -45,9 +45,12 @@ app.get('/problems', async (req, res) => {
       problem.tags = await problem.getTags();
     });
 
+    let allTags = await ProblemTag.find();
+
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
+      allTags: allTags,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
@@ -177,10 +180,13 @@ app.get('/problems/tag/:tagIDs', async (req, res) => {
       return problem;
     });
 
+    let allTags = await ProblemTag.find();
+
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       tags: tags,
+      allTags: allTags,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
