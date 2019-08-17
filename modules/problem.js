@@ -205,12 +205,20 @@ app.get('/problems/tag/:tagIDs', async (req, res, next) => {
     sortTagList(tags);
 
     let allTags = await getAllTags();
+    let tagsFiltered = [], tagsOther = [];
+    for (let tag of allTags) {
+      if (tagIDs.includes(tag.id)) {
+        tagsFiltered.push(tag);
+      } else {
+        tagsOther.push(tag);
+      }
+    }
 
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       tags: tags,
-      allTags: allTags,
+      allTags: tagsFiltered.concat(tagsOther),
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
