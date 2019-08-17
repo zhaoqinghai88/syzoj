@@ -192,6 +192,7 @@ document.addEventListener('keydown', function (event) {
 $(function () {
   var filterTags = <%- JSON.stringify(tagIDs) %>;
   $('#tag_search_dropdown').dropdown({
+    fullTextSearch: true,
     action: function(name, value) {
       let newFilter;
       let tagID = parseInt(value);
