@@ -64,6 +64,7 @@ app.get('/problems', async (req, res) => {
       problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
       problem.judge_state = await problem.getJudgeState(res.locals.user, true);
       problem.tags = await problem.getTags();
+      sortTagList(problem.tags);
     });
 
     let allTags = await getAllTags();
@@ -130,6 +131,7 @@ app.get('/problems/search', async (req, res) => {
       problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
       problem.judge_state = await problem.getJudgeState(res.locals.user, true);
       problem.tags = await problem.getTags();
+      sortTagList(problem.tags);
     });
 
     res.render('problems', {
@@ -198,6 +200,7 @@ app.get('/problems/tag/:tagIDs', async (req, res, next) => {
       problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
       problem.judge_state = await problem.getJudgeState(res.locals.user, true);
       problem.tags = await problem.getTags();
+      sortTagList(problem.tags);
 
       return problem;
     });
@@ -253,6 +256,7 @@ app.get('/problem/:id', async (req, res) => {
     let state = await problem.getJudgeState(res.locals.user, false);
 
     problem.tags = await problem.getTags();
+    sortTagList(problem.tags);
     await problem.loadRelationships();
 
     let testcases = await syzoj.utils.parseTestdata(problem.getTestdataPath(), problem.type === 'submit-answer');
