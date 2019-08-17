@@ -97,7 +97,7 @@ app.post('/problems/tag/bulk_create', async (req, res) => {
       await tag.save();
     }
 
-    res.redirect(syzoj.utils.makeUrl(['problems']));
+    res.redirect(syzoj.utils.makeUrl(['problems', 'tag', 'bulk_create']));
   } catch (e) {
     syzoj.log(e);
     res.render('error', {
