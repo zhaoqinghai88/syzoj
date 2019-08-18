@@ -19,7 +19,7 @@ app.get('/', async (req, res) => {
 
     let notices = (await Article.find({
       where: { is_notice: true }, 
-      order: { public_time: 'DESC' }
+      order: { update_time: 'DESC' }
     })).map(article => ({
       title: article.title,
       url: syzoj.utils.makeUrl(['article', article.id]),
