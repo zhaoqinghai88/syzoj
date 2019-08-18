@@ -27,12 +27,6 @@ function sortTagList(tags) {
   });
 }
 
-async function getAllTags() {
-  let tags = await ProblemTag.find();
-  sortTagList(tags);
-  return tags;
-}
-
 app.get('/problems', async (req, res) => {
   try {
     const sort = req.query.sort || syzoj.config.sorting.problem.field;
@@ -67,12 +61,10 @@ app.get('/problems', async (req, res) => {
       sortTagList(problem.tags);
     });
 
-    let allTags = await getAllTags();
-
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
-      allTags: allTags,
+      showTagFilter: true,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
@@ -81,6 +73,25 @@ app.get('/problems', async (req, res) => {
     syzoj.log(e);
     res.render('error', {
       err: e
+    });
+  }
+});
+
+app.get('/problems/tags', async (req, res) => {
+  try {
+    let tags = await ProblemTag.find();
+    let data = {};
+    data.order = syzoj.config.problem_tag_colors;
+    data.tags = tags.map(tag => ({
+      id: tag.id,
+      name: tag.name,
+      color: tag.color
+    }));
+    res.send(data);
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
     });
   }
 });
@@ -207,21 +218,11 @@ app.get('/problems/tag/:tagIDs', async (req, res, next) => {
 
     sortTagList(tags);
 
-    let allTags = await getAllTags();
-    let tagsFiltered = [], tagsOther = [];
-    for (let tag of allTags) {
-      if (tagIDs.includes(tag.id)) {
-        tagsFiltered.push(tag);
-      } else {
-        tagsOther.push(tag);
-      }
-    }
-
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       tags: tags,
-      allTags: tagsFiltered.concat(tagsOther),
+      showTagFilter: true,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
