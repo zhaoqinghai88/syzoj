@@ -23,7 +23,7 @@ app.get('/', async (req, res) => {
     })).map(article => ({
       title: article.title,
       url: syzoj.utils.makeUrl(['article', article.id]),
-      date: syzoj.utils.formatDate(article.public_time, 'L')
+      date: syzoj.utils.formatDate(article.update_time, 'L')
     }));
 
     let fortune = null;
