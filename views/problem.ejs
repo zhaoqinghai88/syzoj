@@ -243,9 +243,30 @@ if (contest) {
     <div class="row">
         <div class="column">
           <h4 class="ui top attached block header">样例</h4>
-          <div class="ui bottom attached segment font-content"><%- problem.example %></div>
+          <div id="example_content" class="ui bottom attached segment font-content"><%- problem.example %></div>
         </div>
     </div>
+    <script type="text/javascript">
+      $('#example_content div.ui.existing.segment pre').each(function(i, pre) {
+        var $pre = $(pre);
+        var $segment = $pre.parent();
+        var $p = $segment.prev('p');
+        var $btn = $('<span class="ui mini compact button">');
+        $btn.text('复制').attr('data-click-copy', $pre.text());
+        if ($p.length) {
+          $p.append($btn.css('marginLeft', '1em'));
+        } else {
+          $btn.css({
+            position: 'absolute',
+            right: '0',
+            top: '0',
+            marginRight: '0',
+            borderTopLeftRadius: '0',
+            borderBottomRightRadius: '0'
+          }).insertBefore($pre);
+        }
+      });
+    </script>
   <% } %>
   <% if (problem.limit_and_hint) { %>
     <div class="row">
