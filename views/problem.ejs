@@ -250,7 +250,7 @@ if (contest) {
       $('#example_content div.ui.existing.segment pre').each(function(i, pre) {
         var $pre = $(pre);
         var $segment = $pre.parent();
-        var $p = $segment.prev('p');
+        var $p = $segment.prev('p,h3,h4,h5,h6');
         var $btn = $('<span class="ui mini compact button">');
         $btn.text('复制').attr('data-click-copy', $pre.text());
         if ($p.length) {
