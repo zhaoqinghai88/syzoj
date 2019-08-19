@@ -1,25 +1,16 @@
 <% this.title = '题库' %>
 <% include header %>
-<%
-let tagIDs = [];
-if (typeof tags !== 'undefined') tagIDs = tags.map(x => x.id);
-%>
 <div class="padding">
   <div class="ui grid" style="margin-bottom: 10px; ">
     <div class="row" style="white-space: nowrap; ">
       <div class="seven wide column">
         <% if (typeof tags !== 'undefined') { %>
-          <%
-          tags.sort((a, b) => {
-            return a.color > b.color ? 1 : -1;
-          });
-          %>
-          <% for (let tag of tags) { %>
-              <% let tagListRemovedThisTag = tagIDs.filter(x => x != tag.id).sort().join(','); %>
-              <% let url = tagListRemovedThisTag ? syzoj.utils.makeUrl(['problems', 'tag', tagListRemovedThisTag]) : syzoj.utils.makeUrl(['problems']); %>
-              <a href="<%= url %>" class="ui tiny <%= tag.color %> label">
+          <% for (let arr of tags) { %>
+            <% for (let tag of arr) { %>
+              <a href="javascript:;" data-tag-id="<%= tag.id %>" class="ui tiny <%= tag.color %> label label_toggle_tag"<% if (arr !== tags[0] && tag === arr[0]) { %> style="margin-left: 1em;"<% } %>>
                 <%= tag.name %>
               </a>
+            <% } %>
           <% } %>
         <% } else { %>
           <form action="<%= syzoj.utils.makeUrl(['problems', 'search']) %>" method="get">
@@ -73,7 +64,6 @@ if (typeof tags !== 'undefined') tagIDs = tags.map(x => x.id);
             <% } %>
             <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problems', 'tag', 0, 'edit']) %>" class="ui labeled icon mini green button"><i class="plus icon"></i> 添加标签</a>
           <% } %>
-          <% if (typeof showTagFilter === 'undefined') showTagFilter = false; %>
           <% if (showTagFilter) { %>
             <div id="tag_search_dropdown" class="ui labeled icon mini teal dropdown button" style="margin-left: 10px;">
               <i class="tag icon"></i>
@@ -83,9 +73,7 @@ if (typeof tags !== 'undefined') tagIDs = tags.map(x => x.id);
                   <i class="search icon"></i>
                   <input type="text" placeholder="搜索标签" style="font-size: .9rem;">
                 </div>
-                <div class="scrolling menu" title="点击：切换是否选中这个标签，Shift + 点击：只选中这个标签 / 取消选中这个标签">
-                  <div class="item">Loading...</div>
-                </div>
+                <div class="scrolling menu" title="点击：切换是否选中这个标签，Shift + 点击：只选中这个标签 / 取消选中这个标签"></div>
               </div>
             </div>
           <% } %>
@@ -145,15 +133,9 @@ if (typeof tags !== 'undefined') tagIDs = tags.map(x => x.id);
                 if (problem.tags) {
                   for (let i = problem.tags.length - 1; i >= 0; --i) {
                     let tag = problem.tags[i];
-                    let tagListToggledThisTag;
-                    if (!tagIDs.includes(tag.id)) tagListToggledThisTag = tagIDs.concat([tag.id]);
-                    else tagListToggledThisTag = tagIDs.filter(x => x != tag.id);
-                    tagListToggledThisTag = tagListToggledThisTag.sort().join(',');
-
-                    let url = tagListToggledThisTag ? syzoj.utils.makeUrl(['problems', 'tag', tagListToggledThisTag]) : syzoj.utils.makeUrl(['problems']);
                   %>
                   <span class="ui header<% if (syzoj.config.hidden_problem_tag_colors.includes(tag.color)) { %> tag_hidden<% } %>">
-                    <a href="<%= url %>" class="ui tiny <%= tag.color %> label">
+                    <a href="javascript:;" data-tag-id="<%= tag.id %>" class="ui tiny <%= tag.color %> label label_toggle_tag">
                       <%= tag.name %>
                     </a>
                   </span>
@@ -192,76 +174,105 @@ document.addEventListener('keydown', function (event) {
 });
 
 $(function () {
-  <% if (showTagFilter) { %>
-  var filterTags = <%- JSON.stringify(tagIDs) %>;
-  var allTags = null;
-  var $tag_search = $('#tag_search_dropdown');
-  $tag_search.dropdown({
-    fullTextSearch: true,
-    onShow: function() {
-      if (!allTags) {
-        $.get('/problems/tags', function(data) {
-          var $menu = $tag_search.find('.menu.scrolling');
-          allTags = data.tags;
-          allTags.forEach(function(tag) {
-            tag.filtered = filterTags.includes(tag.id);
-          });
-          allTags.sort(function(a, b) {
-            if (a.filtered && !b.filtered) return -1;
-            if (b.filtered && !a.filtered) return 1;
-            let x = data.order.indexOf(a.color);
-            let y = data.order.indexOf(b.color);
-            if (y === -1 && x !== -1) return -1;
-            if (x === -1 && y !== -1) return 1;
-            if (x < y) return -1;
-            if (x > y) return 1;
-            if (a.name < b.name) return -1;
-            if (a.name > b.name) return 1;
-            return 0;
-          });
-          $menu.html('');
-          allTags.forEach(function(tag) {
-            var $item = $('<div class="item">');
-            if (tag.filtered) $item.addClass('active');
-            $item.attr('data-value', tag.id);
-            var $label = $('<div class="ui empty circular label">');
-            $label.addClass(tag.color);
-            $item.append($label);
-            $item.append($('<span>').text(' ' + tag.name));
-            $menu.append($item);
-          });
-          $tag_search.removeClass('loading disabled');
-          $tag_search.dropdown('show');
-        });
-        $tag_search.addClass('loading disabled');
-        return false;
-      }
-      return true;
-    },
-    action: function(name, value) {
-      let newFilter;
-      let tagID = parseInt(value);
-      if (event.shiftKey) {
-        if (filterTags.length === 1 && filterTags[0] === tagID) {
-          newFilter = [];
-        } else {
-          newFilter = [tagID];
-        }
+  var filterTags = <%- JSON.stringify(typeof tags === 'undefined' ? [] : tags) %>;
+  var filterTagIDs = <%- JSON.stringify(typeof tagIDs === 'undefined' ? [] : tagIDs) %>;
+  var allFilterTagIDs = [].concat(...filterTagIDs);
+  var allTags = <%- JSON.stringify(allTags) %>;
+  var tagMap = new Map();
+
+  allTags.forEach(function(tag) {
+    tagMap.set(tag.id, tag);
+  });
+
+  function makeTagUrl(tags) {
+    if (!tags.length) return '/problems';
+    return '/problems/tag/' + tags.map(arr => arr.join('+')).join(',');
+  }
+
+  function getFilterToggledTag(id, mode) {
+    if (mode === 'one') {
+      if (allFilterTagIDs.length === 1 && allFilterTagIDs[0] === id) {
+        return [[id]];
       } else {
-        if (filterTags.includes(tagID)) {
-          newFilter = filterTags.filter(id => id !== tagID);
-        } else {
-          newFilter = filterTags.concat(tagID);
-        }
+        return [];
       }
-      if (newFilter.length) {
-        location.href = '/problems/tag/' + newFilter.join(',');
+    } else {
+      if (allFilterTagIDs.includes(id)) {
+        return filterTagIDs.map(arr => arr.filter(x => x !== id)).filter(arr => arr.length);
       } else {
-        location.href = '/problems';
+        let group = null;
+        let color = tagMap.get(id).color;
+        for (let arr of filterTagIDs) {
+          for (let tagID of arr) {
+            if (tagMap.get(tagID).color === color) {
+              group = arr;
+              break;
+            }
+          }
+          if (group) break;
+        }
+        if (group) {
+          return filterTagIDs.map(arr => arr === group ? arr.concat(id) : arr.slice(0));
+        } else {
+          let result = filterTagIDs.map(arr => arr.slice(0));
+          result.push([id]);
+          return result;
+        }
       }
     }
-  });
+  }
+
+  function toggleTag(id, mode) {
+    location.href = makeTagUrl(getFilterToggledTag(id, mode));
+  }
+
+  <% if (showTagFilter) { %>
+    const tagOrder = <%- JSON.stringify(syzoj.config.problem_tag_colors) %>;
+    var $tag_search = $('#tag_search_dropdown');
+    var $menu = $tag_search.find('.menu.scrolling');
+    allTags.forEach(function(tag) {
+      tag.filtered = allFilterTagIDs.includes(tag.id);
+    });
+    allTags.sort(function(a, b) {
+      if (a.filtered && !b.filtered) return -1;
+      if (b.filtered && !a.filtered) return 1;
+      let x = tagOrder.indexOf(a.color);
+      let y = tagOrder.indexOf(b.color);
+      if (y === -1 && x !== -1) return -1;
+      if (x === -1 && y !== -1) return 1;
+      if (x < y) return -1;
+      if (x > y) return 1;
+      if (a.name < b.name) return -1;
+      if (a.name > b.name) return 1;
+      return 0;
+    });
+    $menu.html('');
+    allTags.forEach(function(tag) {
+      var $item = $('<div class="item">');
+      if (tag.filtered) $item.addClass('active');
+      $item.attr('data-value', tag.id);
+      var $label = $('<div class="ui empty circular label">');
+      $label.addClass(tag.color);
+      $item.append($label);
+      $item.append($('<span>').text(' ' + tag.name));
+      $menu.append($item);
+    });
+    $tag_search.dropdown({
+      fullTextSearch: true,
+      action: function(name, value) {
+        let tagID = parseInt(value);
+        if (event.shiftKey) {
+          toggleTag(tagID, 'one');
+        } else {
+          toggleTag(tagID, 'all');
+        }
+      }
+    });
   <% } %>
+  $('body').on('click', 'a.label_toggle_tag', function() {
+    let tagID = parseInt($(this).attr('data-tag-id'));
+    toggleTag(tagID, 'all');
+  });
   $('#add_problem_dropdown').dropdown();
 });
 </script>

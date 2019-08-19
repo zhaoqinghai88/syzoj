@@ -46,6 +46,7 @@ function cacheSet(modelName, id, data) {
 
 export default class Model extends TypeORM.BaseEntity {
   static cache = false;
+  static allCached = false;
 
   static async findById<T extends TypeORM.BaseEntity>(this: TypeORM.ObjectType<T>, id?: number): Promise<T | undefined> {
     const doQuery = async () => await (this as any).findOne(parseInt(id as any) || 0);
@@ -61,6 +62,23 @@ export default class Model extends TypeORM.BaseEntity {
         cacheSet(this.name, id, result.toPlain());
       }
       return result;
+    } else {
+      return await doQuery();
+    }
+  }
+
+  static async findAll(): Promise<TypeORM.BaseEntity[]> {
+    const doQuery = () => this.find();
+
+    if ((this as typeof Model).cache) {
+      if (!this.allCached) {
+        let entities = await doQuery();
+        for (let entity of entities) {
+          cacheSet(this.name, (entity as any).id, entity);
+        }
+        this.allCached = true;
+      }
+      return caches.get(this.name).values().filter(x => !!x);
     } else {
       return await doQuery();
     }

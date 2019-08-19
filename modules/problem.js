@@ -27,6 +27,10 @@ function sortTagList(tags) {
   });
 }
 
+async function getAllTags() {
+  return await ProblemTag.findAll();
+}
+
 app.get('/problems', async (req, res) => {
   try {
     const sort = req.query.sort || syzoj.config.sorting.problem.field;
@@ -61,10 +65,13 @@ app.get('/problems', async (req, res) => {
       sortTagList(problem.tags);
     });
 
+    let allTags = await getAllTags();
+
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       showTagFilter: true,
+      allTags: allTags,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
@@ -73,25 +80,6 @@ app.get('/problems', async (req, res) => {
     syzoj.log(e);
     res.render('error', {
       err: e
-    });
-  }
-});
-
-app.get('/problems/tags', async (req, res) => {
-  try {
-    let tags = await ProblemTag.find();
-    let data = {};
-    data.order = syzoj.config.problem_tag_colors;
-    data.tags = tags.map(tag => ({
-      id: tag.id,
-      name: tag.name,
-      color: tag.color
-    }));
-    res.send(data);
-  } catch (e) {
-    syzoj.log(e);
-    res.send({
-      error: e.message
     });
   }
 });
@@ -145,9 +133,13 @@ app.get('/problems/search', async (req, res) => {
       sortTagList(problem.tags);
     });
 
+    let allTags = await getAllTags();
+
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
+      allTags: allTags,
+      showTagFilter: false,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
@@ -162,9 +154,26 @@ app.get('/problems/search', async (req, res) => {
 
 app.get('/problems/tag/:tagIDs', async (req, res, next) => {
   try {
-    if (!/^[\d,]+$/.test(req.params.tagIDs)) return next();
-    let tagIDs = Array.from(new Set(req.params.tagIDs.split(',').map(x => parseInt(x))));
-    let tags = await tagIDs.mapAsync(async tagID => ProblemTag.findById(tagID));
+    if (!/^[\d,+]+$/.test(req.params.tagIDs)) return next();
+
+    let tagIDs = req.params.tagIDs.split(',')
+      .map(str => Array.from(new Set(str.split('+').map(x => parseInt(x)))));
+
+    [].concat(...tagIDs).forEach((tagID, index, array) => {
+      if (isNaN(tagID) || index !== array.indexOf(tagID)) throw new ErrorMessage("错误的筛选参数。");
+    });
+
+    let tags = await tagIDs.mapAsync(arr => arr.mapAsync(tagID => ProblemTag.findById(tagID)));
+
+    // Validate the tagIDs
+    for (let arr of tags) {
+      for (let tag of arr) {
+        if (!tag) {
+          throw new ErrorMessage("错误的筛选参数。");
+        }
+      }
+    }
+
     const sort = req.query.sort || syzoj.config.sorting.problem.field;
     const order = req.query.order || syzoj.config.sorting.problem.order;
     if (!['id', 'title', 'rating', 'ac_num', 'submit_num', 'ac_rate'].includes(sort) || !['asc', 'desc'].includes(order)) {
@@ -177,29 +186,22 @@ app.get('/problems/tag/:tagIDs', async (req, res, next) => {
       sortVal = '`problem`.`' + sort + '`';
     }
 
-    // Validate the tagIDs
-    for (let tag of tags) {
-      if (!tag) {
-        return res.redirect(syzoj.utils.makeUrl(['problems']));
-      }
-    }
-
     let sql = 'SELECT `id` FROM `problem` WHERE\n';
-    for (let tagID of tagIDs) {
-      if (tagID !== tagIDs[0]) {
-        sql += 'AND\n';
-      }
+    let wheres = [];
 
-      sql += '`problem`.`id` IN (SELECT `problem_id` FROM `problem_tag_map` WHERE `tag_id` = ' + tagID + ')';
+    for (let arr of tagIDs) {
+      wheres.push('`problem`.`id` IN (SELECT DISTINCT `problem_id` FROM `problem_tag_map` WHERE `tag_id` IN (' + arr.join(', ') + '))');
     }
 
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_problem')) {
       if (res.locals.user) {
-        sql += 'AND (`problem`.`is_public` = 1 OR `problem`.`user_id` = ' + res.locals.user.id + ')';
+        wheres.push('(`problem`.`is_public` = 1 OR `problem`.`user_id` = ' + res.locals.user.id + ')');
       } else {
-        sql += 'AND (`problem`.`is_public` = 1)';
+        wheres.push('(`problem`.`is_public` = 1)');
       }
     }
+
+    sql += wheres.join(' AND\n');
 
     let paginate = syzoj.utils.paginate(await Problem.countQuery(sql), req.query.page, syzoj.config.page.problem);
     let problems = await Problem.query(sql + ` ORDER BY ${sortVal} ${order} ` + paginate.toSQL());
@@ -216,12 +218,16 @@ app.get('/problems/tag/:tagIDs', async (req, res, next) => {
       return problem;
     });
 
-    sortTagList(tags);
+    tags.forEach(arr => sortTagList(arr));
+
+    let allTags = await getAllTags();
 
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       tags: tags,
+      tagIDs: tagIDs,
+      allTags: allTags,
       showTagFilter: true,
       paginate: paginate,
       curSort: sort,
