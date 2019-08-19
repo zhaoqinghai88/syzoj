@@ -250,7 +250,7 @@ $(function () {
     allTags.forEach(function(tag) {
       var $item = $('<div class="item">');
       if (tag.filtered) $item.addClass('active');
-      $item.attr('data-value', tag.id);
+      $item.attr('data-value', tag.id).attr('data-content', '#' + tag.id);
       var $label = $('<div class="ui empty circular label">');
       $label.addClass(tag.color);
       $item.append($label);
@@ -267,6 +267,9 @@ $(function () {
           toggleTag(tagID, 'all');
         }
       }
+    });
+    $tag_search.find('.item[data-content]').popup({
+      position: 'left center'
     });
   <% } %>
   $('body').on('click', 'a.label_toggle_tag', function() {
