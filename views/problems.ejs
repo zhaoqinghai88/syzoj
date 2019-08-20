@@ -192,9 +192,9 @@ $(function () {
   function getFilterToggledTag(id, mode) {
     if (mode === 'one') {
       if (allFilterTagIDs.length === 1 && allFilterTagIDs[0] === id) {
-        return [[id]];
-      } else {
         return [];
+      } else {
+        return [[id]];
       }
     } else {
       if (allFilterTagIDs.includes(id)) {
