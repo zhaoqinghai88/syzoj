@@ -1,8 +1,8 @@
-const Bluebird = require('bluebird');
-const sendmail = Bluebird.promisify(require('sendmail')());
+// const Bluebird = require('bluebird');
+// const sendmail = Bluebird.promisify(require('sendmail')());
 const { DM } = require('waliyun');
 const nodemailer = require('nodemailer');
-
+const nodeoutlook = require('nodejs-nodemailer-outlook');
 let doSendEmail;
 
 if (syzoj.config.email.method === "sendmail") {
@@ -34,7 +34,7 @@ if (syzoj.config.email.method === "sendmail") {
             throw new Error("阿里云 API 错误：" + JSON.stringify(result));
         }
     }
-} else if (syzoj.config.email.method === "smtp") {
+} /* else if (syzoj.config.email.method === "smtp") {
     const smtpConfig = {
         host: syzoj.config.email.options.host,
         port: syzoj.config.email.options.port || 465,
@@ -56,7 +56,27 @@ if (syzoj.config.email.method === "sendmail") {
             subject: subject,
             html: body
         });
-    };
+    }
+} */else if (syzoj.config.email.method === 'outlook') {
+    const send = (to, subject, body) => {
+        return new Promise((resolve, reject) => {
+            nodeoutlook.sendEmail({
+                auth: {
+                    user: syzoj.config.email.options.username,
+                    pass: syzoj.config.email.options.password
+                }, 
+                from: `"${syzoj.config.title}" <${syzoj.config.email.options.username}>`,
+                to: to,
+                subject: subject,
+                html: body,
+                onError: (e) => reject(e),
+                onSuccess: (i) => resolve(i)
+            });
+        })
+    }    
+    doSendEmail = async (to, subject, body) => {
+	await send(to, subject, body)
+    }
 } else {
     doSendEmail = async () => {
         throw new Error("邮件发送配置不正确。");

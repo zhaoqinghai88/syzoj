@@ -117,6 +117,13 @@ if (contest) {
             <% } else { %>
               <a class="small ui button" id="public" href-post="<%= syzoj.utils.makeUrl(['problem', problem.id, 'public']) %>">公开</a>
             <% } %>
+
+            <% if (problem.is_data_public) {  %>
+              <a class="small ui button" id="dis_public_data" href-post="<%= syzoj.utils.makeUrl(['problem', problem.id, 'dis_public_data']) %>">取消公开数据</a>
+            <% } else { %>
+              <a class="small ui button" id="public_data" href-post="<%= syzoj.utils.makeUrl(['problem', problem.id, 'public_data']) %>">公开数据</a>
+            <% } %>
+
             <div class="ui basic modal" id="modal-delete">
               <div class="ui icon header">
                 <i class="trash icon"></i>

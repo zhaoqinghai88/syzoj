@@ -5,7 +5,7 @@ const Email = require('../libs/email');
 const jwt = require('jsonwebtoken');
 
 function setLoginCookie(username, password, res) {
-  res.cookie('login', JSON.stringify([username, password]));
+  // res.cookie('login', JSON.stringify([username, password]));
 }
 
 // Login
@@ -272,7 +272,9 @@ app.post('/api/markdown', async (req, res) => {
 
 app.get('/static/uploads/answer/:md5', async (req, res) => {
   try {
-    res.sendFile(File.resolvePath('answer', req.params.md5));
+    let md5 = req.params.md5;
+    if (typeof md5 !== 'string' || !/^[0-9a-fA-F]+$/.test(md5)) throw new ErrorMessage("你确定这是个 md5?");
+    res.sendFile(File.resolvePath('answer', md5));
   } catch (e) {
     res.status(500).send(e);
   }

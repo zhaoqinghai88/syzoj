@@ -591,6 +591,29 @@ async function setPublic(req, res, is_public) {
   }
 }
 
+// Set data public
+async function setDataPublic(req, res, is_public) {
+  try {
+    let id = parseInt(req.params.id);
+    let problem = await Problem.fromID(id);
+    if (!problem) throw new ErrorMessage('无此题目。');
+
+    let allowedManage = await problem.isAllowedManageBy(res.locals.user);
+    if (!allowedManage) throw new ErrorMessage('您没有权限进行此操作。');
+
+    problem.is_data_public = is_public;
+    await problem.save();
+
+    res.redirect(syzoj.utils.makeUrl(['problem', id]));
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+}
+
+
 app.post('/problem/:id/public', async (req, res) => {
   await setPublic(req, res, true);
 });
@@ -598,6 +621,15 @@ app.post('/problem/:id/public', async (req, res) => {
 app.post('/problem/:id/dis_public', async (req, res) => {
   await setPublic(req, res, false);
 });
+
+app.post('/problem/:id/public_data', async (req, res) => {
+  await setDataPublic(req, res, true);
+});
+
+app.post('/problem/:id/dis_public_data', async (req, res) => {
+  await setDataPublic(req, res, false);
+});
+
 
 app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1 }]), async (req, res) => {
   try {
@@ -838,10 +870,15 @@ app.get('/problem/:id/testdata/download/:filename?', async (req, res) => {
 
     if (!problem) throw new ErrorMessage('无此题目。');
     if (!await problem.isAllowedUseBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
+    if (!problem.is_data_public && !await problem.isAllowedEditBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
 
     if (!req.params.filename) {
       if (!await syzoj.utils.isFile(problem.getTestdataArchivePath())) {
         await problem.makeTestdataZip();
+      }
+    } else {
+      if (typeof req.params.filename === 'string' && (req.params.filename.includes('../') || req.params.filename.toUpperCase().includes('..%2F'))) {
+        throw new ErrorMessage("你想干啥？(●'ω'●)");
       }
     }
 
