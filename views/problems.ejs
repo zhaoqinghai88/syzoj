@@ -28,7 +28,12 @@
         <div class="ui toggle checkbox" id="show_tag">
           <style>
             .show_tag_controled {
-              white-space: nowrap; overflow: hidden;
+              overflow: hidden;
+              float: right;
+              text-align: right;
+            }
+            .table_problems > tbody > tr {
+              height: 44px;
             }
           </style>
           <style id="show_tag_style"></style>
@@ -94,7 +99,7 @@
   <div style="margin-bottom: 30px; ">
     <% include page %>
   </div>
-  <table class="ui very basic center aligned table">
+  <table class="ui very basic center aligned table table_problems">
     <thead>
       <tr>
         <% if (user) { %>
@@ -110,7 +115,7 @@
     <tbody>
     <% for (let problem of problems) { %>
         <% if (problem.is_public || problem.allowedEdit) { %>
-        <tr style="height: 44px; ">
+        <tr>
             <% if (user) { %>
                 <td>
                 <% if (problem.judge_state) { %>
@@ -128,7 +133,7 @@
                 <% if (!problem.is_public) { %><span class="ui header"><span class="ui tiny red label">未公开</span></span><% } %>
                 <% if (!problem.is_data_public) { %><span class="ui header"><span class="ui tiny orange label">数据未公开</span></span><% } %>
               </a>
-              <div class="show_tag_controled" style="float: right; ">
+              <div class="show_tag_controled">
                 <%
                 if (problem.tags) {
                   for (let i = problem.tags.length - 1; i >= 0; --i) {
