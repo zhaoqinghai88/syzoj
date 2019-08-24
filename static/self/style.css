@@ -254,7 +254,7 @@ body > .ui.page.dimmer {
     font-size: 0.94em;
     font-weight: bold;
     padding: 0 1px;
-    vertical-align: bottom;
+    /* vertical-align: bottom; */
 }
 
 code {
