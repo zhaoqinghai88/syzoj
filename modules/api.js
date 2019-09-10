@@ -321,3 +321,18 @@ app.get('/static/uploads/answer/:md5', async (req, res) => {
     res.status(500).send(e);
   }
 });
+
+app.get('/api/hitokoto', async (req, res, next) => {
+  try {
+    const config = syzoj.config.custom_hitokoto;
+    if (!config || !config.enabled) return next();
+    if (!config.list.length) throw new ErrorMessage("这里什么都没有");
+    const list = syzoj.config.custom_hitokoto.list;
+    res.send(list[Math.floor(Math.random() * list.length)]);
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});
