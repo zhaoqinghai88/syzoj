@@ -147,5 +147,6 @@
     "grey",
     "black"
   ],
-  "hidden_problem_tag_colors": []
+  "hidden_problem_tag_colors": [],
+  "visitor_restriction": false
 }

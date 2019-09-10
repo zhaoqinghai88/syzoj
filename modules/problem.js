@@ -243,6 +243,7 @@ app.get('/problems/tag/:tagIDs', async (req, res, next) => {
 
 app.get('/problem/:id', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');
@@ -290,6 +291,7 @@ app.get('/problem/:id', async (req, res) => {
 
 app.get('/problem/:id/export', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。');
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');
@@ -960,6 +962,7 @@ app.get('/problem/:id/testdata/download/:filename?', async (req, res) => {
 
 app.get('/problem/:id/download/additional_file', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
 

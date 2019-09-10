@@ -119,6 +119,7 @@ app.post('/contest/:id/edit', async (req, res) => {
 
 app.get('/contest/:id', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     const curUser = res.locals.user;
     let contest_id = parseInt(req.params.id);
 
@@ -424,6 +425,7 @@ app.get('/contest/:id/submissions', async (req, res) => {
 
 app.get('/contest/submission/:id', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     const id = parseInt(req.params.id);
     const judge = await JudgeState.findById(id);
     if (!judge) throw new ErrorMessage("提交记录 ID 不正确。");
@@ -475,6 +477,7 @@ app.get('/contest/submission/:id', async (req, res) => {
 
 app.get('/contest/:id/problem/:pid', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let contest_id = parseInt(req.params.id);
     let contest = await Contest.findById(contest_id);
     if (!contest) throw new ErrorMessage('无此比赛。');
@@ -532,6 +535,7 @@ app.get('/contest/:id/problem/:pid', async (req, res) => {
 
 app.get('/contest/:id/:pid/download/additional_file', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let contest = await Contest.findById(id);
     if (!contest) throw new ErrorMessage('无此比赛。');
