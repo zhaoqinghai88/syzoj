@@ -330,6 +330,7 @@ app.get('/problem/:id/export', async (req, res) => {
 
 app.get('/problem/:id/edit', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id) || 0;
     let problem = await Problem.findById(id);
 
@@ -844,6 +845,7 @@ app.post('/problem/:id/delete', async (req, res) => {
 
 app.get('/problem/:id/testdata', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
 
@@ -929,6 +931,7 @@ function downloadOrRedirect(req, res, filename, sendName) {
 
 app.get('/problem/:id/testdata/download/:filename?', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
 
