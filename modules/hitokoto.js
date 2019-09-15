@@ -6,11 +6,13 @@ syzoj.hitokoto = {
   configFile: Path.join(syzoj.rootDir, 'custom-hitokoto.json'),
   list: [],
   load() {
+    let result = [];
     try {
-      this.update(JSON.parse(fs.readFileSync(this.configFile)));
+      result = JSON.parse(fs.readFileSync(this.configFile));
     } catch (err) {
       syzoj.log(err);
     }
+    this.update(result);
   },
   update(list) {
     if (!list.length) {
