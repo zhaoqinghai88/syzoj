@@ -74,3 +74,6 @@ docker-compose.yml
 
 # App.js for Debugging
 app-debug.js
+
+# Custom Hitokoto
+custom-hitokoto.json

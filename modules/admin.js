@@ -13,6 +13,7 @@ const calcRating = require('../libs/rating');
 
 const TypeORM = require('typeorm');
 const randomstring = require('randomstring');
+const YAML = require('js-yaml');
 
 app.get('/admin/info', async (req, res) => {
   try {
@@ -708,5 +709,38 @@ app.post('/admin/bulk_public', async (req, res) => {
       error_info: e.message,
       status: 'failed'
     });
+  }
+});
+
+app.get('/admin/hitokoto', async (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+
+    res.render('admin_hitokoto', {
+      data: YAML.safeDump(syzoj.hitokoto.list, {
+        indent: 2
+      })
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
+  }
+});
+
+app.post('/admin/hitokoto', async (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+
+    syzoj.hitokoto.update(YAML.safeLoad(req.body.data));
+    await syzoj.hitokoto.save();
+
+    res.redirect(syzoj.utils.makeUrl(['admin', 'hitokoto']));
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
   }
 });
