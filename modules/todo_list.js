@@ -8,7 +8,7 @@ app.post('/api/todo_list/:action/:problem_id', async (req, res) => {
     if (!res.locals.user) throw new ErrorMessage("请先登录");
 
     let problem_id = parseInt(req.params.problem_id);
-    if (!Number.isSafeInteger(problem_id) || problem_id <= 0) throw new ErrorMessage("你确定这是个题目编号？");
+    if (!Number.isSafeInteger(problem_id)) throw new ErrorMessage("你确定这是个题目编号？");
     
     let data = {
       user_id: res.locals.user.id,
