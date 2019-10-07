@@ -92,7 +92,7 @@
               return;
             }
             $('#hitokoto-loader').removeClass('active');
-            $('#hitokoto-content').css('display', '').text(data.hitokoto);
+            $('#hitokoto-content').css('display', '').<%- syzoj.config.custom_hitokoto.enabled ? 'html' : 'text' %>(data.hitokoto);
             if (data.from) {
               $('#hitokoto-from').css('display', '').text('——' + data.from);
             }
