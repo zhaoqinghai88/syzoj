@@ -137,7 +137,7 @@ app.get('/problems/search', async (req, res) => {
       res.send({
         success: true,
         paginate: {
-          current: paginate.curPage,
+          current: paginate.currPage,
           total: paginate.pageCnt
         },
         problems: problems
