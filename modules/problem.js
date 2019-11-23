@@ -133,17 +133,28 @@ app.get('/problems/search', async (req, res) => {
       sortTagList(problem.tags);
     });
 
-    let allTags = await getAllTags();
+    if (['1', 'true'].includes(req.query.json)) {
+      res.send({
+        success: true,
+        problems: problems
+          .filter(({ is_public, allowedEdit }) => is_public || allowedEdit)
+          .map(({ id, title, tags }) => ({
+            id, title, tags: tags.map(tag => tag.name)
+          }))
+      });
+    } else {
+      let allTags = await getAllTags();
+      res.render('problems', {
+        allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
+        problems: problems,
+        allTags: allTags,
+        showTagFilter: false,
+        paginate: paginate,
+        curSort: sort,
+        curOrder: order === 'asc'
+      });
+    }
 
-    res.render('problems', {
-      allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
-      problems: problems,
-      allTags: allTags,
-      showTagFilter: false,
-      paginate: paginate,
-      curSort: sort,
-      curOrder: order === 'asc'
-    });
   } catch (e) {
     syzoj.log(e);
     res.render('error', {
