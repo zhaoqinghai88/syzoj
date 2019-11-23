@@ -136,6 +136,10 @@ app.get('/problems/search', async (req, res) => {
     if (['1', 'true'].includes(req.query.json)) {
       res.send({
         success: true,
+        paginate: {
+          current: paginate.curPage,
+          total: paginate.pageCnt
+        },
         problems: problems
           .filter(({ is_public, allowedEdit }) => is_public || allowedEdit)
           .map(({ id, title, tags }) => ({
