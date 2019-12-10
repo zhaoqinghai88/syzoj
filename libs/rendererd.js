@@ -4,6 +4,10 @@ const xssWhiteList = Object.assign({}, require('xss/lib/default').whiteList);
 delete xssWhiteList.audio;
 delete xssWhiteList.video;
 
+'ruby,rt,rb,rp,rtc'.split(',').forEach(tagName => {
+  xssWhiteList[tagName] = [];
+});
+
 for (const tag in xssWhiteList) {
   xssWhiteList[tag] = xssWhiteList[tag].concat(['style', 'class']);
 }
