@@ -150,13 +150,8 @@
                 %>
               </div>
             </td>
-            <% if (problem.ac_num || problem.submit_num) { %>
-              <td><%= problem.ac_num %></td>
-              <td><%= problem.submit_num %></td>
-            <% } else { %>
-              <td></td>
-              <td></td>
-            <% } %>
+            <td><%= problem.ac_num || '' %></td>
+            <td><%= problem.submit_num || '' %></td>
             <td><%= problem.submit_num != 0 ? (((problem.ac_num / problem.submit_num * 100) || 0).toFixed(2) + '%') : '-' %></td>
         </tr>
         <% } %>
