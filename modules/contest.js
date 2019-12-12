@@ -78,7 +78,7 @@ app.post('/contest/:id/edit', async (req, res) => {
       ranklist = await ContestRanklist.create();
 
       // Only new contest can be set type
-      if (!['noi', 'ioi', 'acm'].includes(req.body.type)) throw new ErrorMessage('无效的赛制。');
+      if (!['noi', 'ioi', 'acm', 'crt'].includes(req.body.type)) throw new ErrorMessage('无效的赛制。');
       contest.type = req.body.type;
     } else {
       await contest.loadRelationships();
@@ -157,7 +157,7 @@ app.get('/contest/:id', async (req, res) => {
             }
             problem.judge_id = player.score_details[problem.problem.id].judge_id;
           }
-        } else if (contest.type === 'ioi') {
+        } else if (contest.type === 'ioi' || contest.type === 'crt') {
           if (player.score_details[problem.problem.id]) {
             let judge_state = await JudgeState.findById(player.score_details[problem.problem.id].judge_id);
             problem.status = judge_state.status;
@@ -189,18 +189,18 @@ app.get('/contest/:id', async (req, res) => {
       for (let problem of problems) {
         problem.statistics = { attempt: 0, accepted: 0 };
 
-        if (contest.type === 'ioi' || contest.type === 'noi') {
+        if (contest.type === 'ioi' || contest.type === 'noi' || contest.type === 'crt') {
           problem.statistics.partially = 0;
         }
 
         for (let player of players) {
           if (player.score_details[problem.problem.id]) {
             problem.statistics.attempt++;
-            if ((contest.type === 'acm' && player.score_details[problem.problem.id].accepted) || ((contest.type === 'noi' || contest.type === 'ioi') && player.score_details[problem.problem.id].score === 100)) {
+            if ((contest.type === 'acm' && player.score_details[problem.problem.id].accepted) || ((contest.type === 'noi' || contest.type === 'ioi' || contest.type === 'crt') && player.score_details[problem.problem.id].score === 100)) {
               problem.statistics.accepted++;
             }
 
-            if ((contest.type === 'noi' || contest.type === 'ioi') && player.score_details[problem.problem.id].score > 0) {
+            if ((contest.type === 'noi' || contest.type === 'ioi' || contest.type === 'crt') && player.score_details[problem.problem.id].score > 0) {
               problem.statistics.partially++;
             }
           }
@@ -243,7 +243,7 @@ app.get('/contest/:id/ranklist', async (req, res) => {
     let ranklist = await players_id.mapAsync(async player_id => {
       let player = await ContestPlayer.findById(player_id);
 
-      if (contest.type === 'noi' || contest.type === 'ioi') {
+      if (contest.type === 'noi' || contest.type === 'ioi' || contest.type === 'crt') {
         player.score = 0;
       }
 
@@ -251,7 +251,7 @@ app.get('/contest/:id/ranklist', async (req, res) => {
         player.score_details[i].judge_state = await JudgeState.findById(player.score_details[i].judge_id);
 
         /*** XXX: Clumsy duplication, see ContestRanklist::updatePlayer() ***/
-        if (contest.type === 'noi' || contest.type === 'ioi') {
+        if (contest.type === 'noi' || contest.type === 'ioi' || contest.type === 'crt') {
           let multiplier = (contest.ranklist.ranking_params || {})[i] || 1.0;
           player.score_details[i].weighted_score = player.score_details[i].score == null ? null : Math.round(player.score_details[i].score * multiplier);
           player.score += player.score_details[i].weighted_score;
@@ -285,12 +285,12 @@ app.get('/contest/:id/ranklist', async (req, res) => {
 function getDisplayConfig(contest) {
   return {
     showScore: contest.allowedSeeingScore(),
-    showUsage: false,
-    showCode: false,
+    showUsage: contest.type === 'crt',
+    showCode: contest.type === 'crt',
     showResult: contest.allowedSeeingResult(),
     showOthers: contest.allowedSeeingOthers(),
     showDetailResult: contest.allowedSeeingTestcase(),
-    showTestdata: false,
+    showTestdata: contest.type === 'crt',
     inContest: true,
     showRejudge: false
   };
@@ -430,7 +430,9 @@ app.get('/contest/submission/:id', async (req, res) => {
     const judge = await JudgeState.findById(id);
     if (!judge) throw new ErrorMessage("提交记录 ID 不正确。");
     const curUser = res.locals.user;
-    if ((!curUser) || judge.user_id !== curUser.id) throw new ErrorMessage("您没有权限执行此操作。");
+    if (contest.type !== 'crt') {
+      if ((!curUser) || judge.user_id !== curUser.id) throw new ErrorMessage("您没有权限执行此操作。");
+    }
 
     if (judge.type !== 1) {
       return res.redirect(syzoj.utils.makeUrl(['submission', id]));

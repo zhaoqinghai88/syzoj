@@ -126,7 +126,7 @@ export default class JudgeState extends Model {
     else if (this.type === 1) {
       let contest = await Contest.findById(this.type_info);
       if (contest.isRunning()) {
-        return user && await contest.isSupervisior(user);
+        return user && (contest.type === 'crt' || await contest.isSupervisior(user));
       } else {
         return true;
       }
