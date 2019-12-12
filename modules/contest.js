@@ -291,6 +291,7 @@ function getDisplayConfig(contest) {
     showOthers: contest.allowedSeeingOthers(),
     showDetailResult: contest.allowedSeeingTestcase(),
     showTestdata: contest.type === 'crt',
+    showLink: contest.type === 'crt',
     inContest: true,
     showRejudge: false
   };

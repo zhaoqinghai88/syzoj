@@ -15,6 +15,7 @@ const displayConfig = {
   showOthers: true,
   showTestdata: true,
   showDetailResult: true,
+  showLink: true,
   inContest: false,
   showRejudge: false
 };
