@@ -429,10 +429,6 @@ app.get('/contest/submission/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     const judge = await JudgeState.findById(id);
     if (!judge) throw new ErrorMessage("提交记录 ID 不正确。");
-    const curUser = res.locals.user;
-    if (contest.type !== 'crt') {
-      if ((!curUser) || judge.user_id !== curUser.id) throw new ErrorMessage("您没有权限执行此操作。");
-    }
 
     if (judge.type !== 1) {
       return res.redirect(syzoj.utils.makeUrl(['submission', id]));
@@ -440,6 +436,10 @@ app.get('/contest/submission/:id', async (req, res) => {
 
     const contest = await Contest.findById(judge.type_info);
     contest.ended = contest.isEnded();
+    const curUser = res.locals.user;
+    if (contest.type !== 'crt') {
+      if ((!curUser) || judge.user_id !== curUser.id) throw new ErrorMessage("您没有权限执行此操作。");
+    }
 
     const displayConfig = getDisplayConfig(contest);
     displayConfig.showCode = true;
