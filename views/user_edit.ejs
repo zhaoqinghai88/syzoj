@@ -14,7 +14,13 @@
       <div class="field">
 	    	<label for="username">用户名</label>
 	    	<input type="text" id="username" name="username" value="<%= edited_user.username %>"<% if (!user.allowedManage) { %> readonly<% } %>>
-	    </div>
+      </div>
+      <% if (user.allowedManage) { %>
+        <div class="field">
+          <label for="username">Nameplate</label>
+          <input type="text" id="nameplate" name="nameplate" value="<%= edited_user.nameplate %>">
+        </div>
+      <% } %>
       <div class="field">
 	    	<label for="sex">性别</label>
 	    	<select class="ui dropdown" name="sex">

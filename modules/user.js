@@ -189,6 +189,12 @@ app.post('/user/:id/edit', async (req, res) => {
       await user.setPrivileges(privileges);
     }
 
+    let allowedManage = await res.locals.user.hasPrivilege('manage_user');
+
+    if (allowedManage) {
+      user.nameplate = req.body.nameplate;
+    }
+
     user.information = req.body.information;
     user.sex = req.body.sex;
     user.public_email = (req.body.public_email === 'on');
@@ -199,7 +205,7 @@ app.post('/user/:id/edit', async (req, res) => {
     if (user.id === res.locals.user.id) res.locals.user = user;
 
     user.privileges = await user.getPrivileges();
-    res.locals.user.allowedManage = await res.locals.user.hasPrivilege('manage_user');
+    res.locals.user.allowedManage = allowedManage;
 
     res.render('user_edit', {
       edited_user: user,
