@@ -263,7 +263,8 @@ app.get('/contest/:id/ranklist', async (req, res) => {
 
       return {
         user: user,
-        player: player
+        player: player,
+        is_official: player.is_official
       };
     });
 
@@ -305,7 +306,7 @@ app.post('/contest/:id/set-official', async (req, res) => {
     player.is_official = is_official;
     await player.save();
 
-    res.redirect(syzoj.utils.makeUrl('contest', contest_id, 'ranklist'));
+    res.redirect(syzoj.utils.makeUrl(['contest', contest_id, 'ranklist']));
   } catch (e) {
     syzoj.log(e);
     res.render('error', {
