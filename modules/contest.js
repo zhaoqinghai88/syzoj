@@ -230,9 +230,10 @@ app.get('/contest/:id/ranklist', async (req, res) => {
 
     if (!contest) throw new ErrorMessage('无此比赛。');
     if (!contest.is_public && (!res.locals.user || !res.locals.user.is_admin)) throw new ErrorMessage('比赛未公开，请耐心等待 (´∀ `)');
+
+    const isSupervisior = await contest.isSupervisior(curUser);
     if ([contest.allowedSeeingResult() && contest.allowedSeeingOthers(),
-    contest.isEnded(),
-    await contest.isSupervisior(curUser)].every(x => !x))
+    contest.isEnded(), isSupervisior].every(x => !x))
       throw new ErrorMessage('您没有权限进行此操作。');
 
     await contest.loadRelationships();
@@ -272,8 +273,39 @@ app.get('/contest/:id/ranklist', async (req, res) => {
     res.render('contest_ranklist', {
       contest: contest,
       ranklist: ranklist,
-      problems: problems
+      problems: problems,
+      isSupervisior: isSupervisior
     });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.post('/contest/:id/set-official', async (req, res) => {
+  try {
+    let contest_id = parseInt(req.params.id);
+    let contest = await Contest.findById(contest_id);
+    const curUser = res.locals.user;
+
+    if (!contest) throw new ErrorMessage('无此比赛。');
+    if (!await contest.isSupervisior(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let player_id = parseInt(req.query.player);
+    let is_official = req.query.official == '1';
+
+    let player = await ContestPlayer.findOne({
+      contest_id: contest_id,
+      player_id: player_id
+    });
+    if (!player) throw new ErrorMessage('无此选手。');
+
+    player.is_official = is_official;
+    await player.save();
+
+    res.redirect(syzoj.utils.makeUrl('contest', contest_id, 'ranklist'));
   } catch (e) {
     syzoj.log(e);
     res.render('error', {

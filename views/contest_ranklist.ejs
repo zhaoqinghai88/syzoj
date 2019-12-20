@@ -28,6 +28,9 @@
                 <% if (contest.type === 'noi' || contest.type === 'ioi' || contest.type === 'crt') { %>
                   <th>总分</th>
                 <% } %>
+                <% if (isSupervisior) { %>
+                  <th></th>
+                <% } %>
             </tr>
             </thead>
             <tbody>
@@ -81,7 +84,10 @@
                   <%= rank %>
                   </div>
                 </td>
-                <td><a href="<%= syzoj.utils.makeUrl(['user', item.user.id]) %>"><%= item.user.username %></a><% if (item.user.nameplate) { %><%- item.user.nameplate %><% } %></td>
+                <td>
+                  <% if (!item.is_official) { %>*<% } %>
+                  <a href="<%= syzoj.utils.makeUrl(['user', item.user.id]) %>"><%= item.user.username %></a><% if (item.user.nameplate) { %><%- item.user.nameplate %><% } %>
+                </td>
                 <% if (contest.type === 'acm') { %>
                   <td>
                     <span class="score score_<%= parseInt((item.player.score / ranklist[0].player.score * 10) || 0) %>">
@@ -148,6 +154,11 @@
                     <div class="submit_time">
                       <%= syzoj.utils.formatTime(latest - contest.start_time) %>
                     </div>
+                  </td>
+                <% } %>
+                <% if (isSupervisior) { %>
+                  <td>
+                    <a class="ui mini compact button" href-post="<%= syzoj.utils.makeUrl(['contest', contest.id, 'set-official'], { player: item.user.id, official: item.is_official ? '0' : '1' }) %>"><%= item.is_official ? 'Official' : 'Unofficial' %></a>
                   </td>
                 <% } %>
             </tr>

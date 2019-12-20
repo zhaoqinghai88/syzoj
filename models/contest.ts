@@ -128,7 +128,8 @@ export default class Contest extends Model {
       if (!player) {
         player = await ContestPlayer.create({
           contest_id: this.id,
-          user_id: judge_state.user_id
+          user_id: judge_state.user_id,
+          is_official: true
         });
         await player.save();
       }
