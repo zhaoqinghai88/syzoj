@@ -299,7 +299,7 @@ app.post('/contest/:id/set-official', async (req, res) => {
 
     let player = await ContestPlayer.findOne({
       contest_id: contest_id,
-      player_id: player_id
+      user_id: player_id
     });
     if (!player) throw new ErrorMessage('无此选手。');
 
