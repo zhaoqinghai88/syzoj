@@ -212,12 +212,15 @@ app.post('/admin/rating/add', async (req, res) => {
 
     const players = [];
     for (let i = 1; i <= contest.ranklist.ranklist.player_num; i++) {
-      const user = await User.findById((await ContestPlayer.findById(contest.ranklist.ranklist[i])).user_id);
-      players.push({
-        user: user,
-        rank: i,
-        currentRating: user.rating
-      });
+      const player = await ContestPlayer.findById(contest.ranklist.ranklist[i]);
+      if (player && player.is_official) {
+        const user = await User.findById(player.user_id);
+        players.push({
+          user: user,
+          rank: i,
+          currentRating: user.rating
+        });
+      }
     }
     const newRating = calcRating(players);
     for (let i = 0; i < newRating.length; i++) {
