@@ -29,13 +29,27 @@ syzoj.hitokoto = {
 
 syzoj.hitokoto.load();
 
+function weightedRandomFrom(list) {
+  let total = 0;
+  for (let item of list) {
+    total += item.weight || 1;
+  }
+  let temp = Math.random() * total;
+  for (let item of list) {
+    temp -= item.weight;
+    if (temp < 0) return item;
+  }
+  return null; // should not be here
+}
+
 app.get('/api/hitokoto', async (req, res, next) => {
   try {
     const config = syzoj.config.custom_hitokoto;
     if (!config || !config.enabled) return next();
     const list = syzoj.hitokoto.list;
     if (!list.length) throw new ErrorMessage("这里什么都没有");
-    res.send(list[Math.floor(Math.random() * list.length)]);
+    let { hitokoto, from } = weightedRandomFrom(list);
+    res.send({ hitokoto, from });
   } catch (e) {
     syzoj.log(e);
     res.send({
