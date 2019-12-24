@@ -53,9 +53,10 @@ app.get('/api/quote', (req, res) => {
     }
     let quote = getRandomFrom(list);
     if (!quote) {
-      throw new ErrorMessage("no quotes are available");
+      res.status(404).send("no quotes are available");
+    } else {
+      res.type(quote.type).send(quote.buffer);
     }
-    res.type(quote.type).send(quote.buffer);
   } catch (e) {
     res.status(500).send(e.message);
   }
