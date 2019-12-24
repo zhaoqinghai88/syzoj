@@ -32,12 +32,12 @@ syzoj.hitokoto.load();
 function weightedRandomFrom(list) {
   let total = 0;
   for (let item of list) {
-    total += item.weight || 1;
+    total += item.weight;
   }
   let temp = Math.random() * total;
   for (let item of list) {
     temp -= item.weight;
-    if (temp < 0) return item;
+    if (temp < 0) return item.data;
   }
   return null; // should not be here
 }
@@ -48,8 +48,9 @@ app.get('/api/hitokoto', async (req, res, next) => {
     if (!config || !config.enabled) return next();
     const list = syzoj.hitokoto.list;
     if (!list.length) throw new ErrorMessage("这里什么都没有");
-    let { hitokoto, from } = weightedRandomFrom(list);
-    res.send({ hitokoto, from });
+    res.send(weightedRandomFrom(list.map(
+      ({ hitokoto, from, weight }) => ({ data: { hitokoto, from }, weight: weight || 1 })
+    )));
   } catch (e) {
     syzoj.log(e);
     res.send({
