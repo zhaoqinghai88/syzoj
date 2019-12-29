@@ -131,6 +131,9 @@ module.exports = {
     if (encoded) res += '?' + encoded;
     return res;
   },
+  makeQuoteUrl(by, filename) {
+    return this.makeUrl(['quote', encodeURIComponent(by), encodeURIComponent(filename)]);
+  },
   highlight(code, lang) {
     return new Promise((resolve, reject) => {
       renderer.highlight(code, lang, res => {

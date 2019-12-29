@@ -747,3 +747,31 @@ app.post('/admin/hitokoto', async (req, res) => {
     })
   }
 });
+
+app.get('/admin/quote_image', async (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+
+    res.render('admin_quote_image', {
+      quotes: syzoj.quotes
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
+  }
+});
+
+app.post('/api/admin/quote_image/reload', (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+    syzoj.loadQuotes();
+    res.send({ error: null });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});

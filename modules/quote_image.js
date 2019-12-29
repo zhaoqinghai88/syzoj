@@ -4,7 +4,7 @@ const Path = require('path');
 
 const baseDir = Path.join(syzoj.rootDir, 'uploads', 'quote_image');
 
-let quotes = [];
+syzoj.quotes = [];
 
 function loadQuotes() {
   let result = [];
@@ -20,8 +20,10 @@ function loadQuotes() {
           if (stat.isFile()) {
             let buffer = fs.readFileSync(path);
             result.push({
-              of: dir,
+              from: dir,
+              filename: filename,
               type: ext,
+              time: stat.mtime,
               buffer: buffer
             });
           }
@@ -32,8 +34,12 @@ function loadQuotes() {
   return result;
 }
 
+syzoj.loadQuotes = () => {
+  syzoj.quotes = loadQuotes();
+};
+
 try {
-  quotes = loadQuotes();
+  syzoj.loadQuotes();
 } catch (err) {
   syzoj.log(err);
 }
@@ -43,34 +49,49 @@ function getRandomFrom(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-app.get('/api/quote', (req, res) => {
+function quoteHandler(req, res) {
   try {
-    let list = quotes;
-    let name = req.query.of;
-    if (name) {
-      name = name.toLowerCase();
-      list = list.filter(quote => quote.of.toLowerCase() === name);
+    let list = syzoj.quotes;
+    if (req.params.from) {
+      list = list.filter(quote => quote.from === req.params.from);
     }
     let quote = getRandomFrom(list);
     if (!quote) {
-      res.status(404).send("no quotes are available");
+      res.status(404);
+      throw new ErrorMessage("这里似乎还没有语录……不如搜集一些？");
     } else {
-      res.type(quote.type).send(quote.buffer);
+      if (['1', 'true'].includes(req.query.noredirect)) {
+        res.type(quote.type).send(quote.buffer);
+      } else {
+        res.redirect(syzoj.utils.makeQuoteUrl(quote.from, quote.filename));
+      }
     }
-  } catch (e) {
-    res.status(500).send(e.message);
-  }
-});
-
-app.get('/api/quote/reload', (req, res) => {
-  try {
-    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
-    quotes = loadQuotes();
-    res.redirect(syzoj.utils.makeUrl(['api', 'quote']));
   } catch (e) {
     syzoj.log(e);
     res.render('error', {
       err: e
-    });
+    })
+  }
+};
+
+app.get('/quote', (req, res) => quoteHandler(req, res));
+app.get('/quote/:from', (req, res) => quoteHandler(req, res));
+
+app.get('/quote/:from/:filename', (req, res) => {
+  try {
+    let quote = syzoj.quotes.find(quote =>
+      quote.from === req.params.from && quote.filename === req.params.filename
+    );
+    if (quote) {
+      res.type(quote.type).send(quote.buffer);
+    } else {
+      res.status(404);
+      throw new ErrorMessage("这条语录消失了……");
+    }
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
   }
 });
