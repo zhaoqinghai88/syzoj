@@ -6,6 +6,18 @@
   margin-top: 5px;
   color: #000;
 }
+.ranklist-item {
+  position: relative;
+}
+.ranklist-item:not(.official) .ranklist-user:before {
+  content: '*';
+}
+.ranklist-item.official .ranklist-user-btn:before {
+  content: 'Official';
+}
+.ranklist-item:not(.official) .ranklist-user-btn:before {
+  content: 'Unofficial';
+}
 </style>
 <div class="padding">
 <h1 class="ui center aligned header" style="margin-bottom: 30px; "><%= contest.title %></h1>
@@ -27,9 +39,6 @@
                 <% } %>
                 <% if (contest.type === 'noi' || contest.type === 'ioi' || contest.type === 'crt') { %>
                   <th>总分</th>
-                <% } %>
-                <% if (isSupervisior) { %>
-                  <th></th>
                 <% } %>
             </tr>
             </thead>
@@ -84,9 +93,15 @@
                   <%= rank %>
                   </div>
                 </td>
-                <td>
-                  <% if (!item.is_official) { %>*<% } %>
-                  <a href="<%= syzoj.utils.makeUrl(['user', item.user.id]) %>"><%= item.user.username %></a><% if (item.user.nameplate) { %><%- item.user.nameplate %><% } %>
+                <td class="ranklist-item<% if (item.is_official) { %> official<% } %>">
+                  <span class="ranklist-user">
+                    <a href="<%= syzoj.utils.makeUrl(['user', item.user.id]) %>"><%= item.user.username %></a><% if (item.user.nameplate) { %><%- item.user.nameplate %><% } %>
+                  </span>
+                  <% if (isSupervisior) { %>
+                    <div class="ui popup">
+                      <a class="ui mini compact button ranklist-user-btn" data-user-id="<%= item.user.id %>"></a>
+                    </div>
+                  <% } %>
                 </td>
                 <% if (contest.type === 'acm') { %>
                   <td>
@@ -156,11 +171,6 @@
                     </div>
                   </td>
                 <% } %>
-                <% if (isSupervisior) { %>
-                  <td>
-                    <a class="ui mini compact button" href-post="<%= syzoj.utils.makeUrl(['contest', contest.id, 'set-official'], { player: item.user.id, official: item.is_official ? '0' : '1' }) %>"><%= item.is_official ? 'Official' : 'Unofficial' %></a>
-                  </td>
-                <% } %>
             </tr>
             <% lastItem = item; %>
             <% } %>
@@ -176,4 +186,34 @@
 </div>
 <% } %>
 </div>
+<% if (isSupervisior) { %>
+  <script>
+    $(function() {
+      $('.ranklist-user').popup({
+        position: 'top center',
+        hoverable: true
+      });
+      $('.ranklist-user-btn').click(function() {
+        let $this = $(this);
+        let $item = $this.parents('.ranklist-item');
+        let user_id = parseInt($this.attr('data-user-id'));
+        let is_official = $item.hasClass('official');
+        $.post(<%- JSON.stringify(syzoj.utils.makeUrl(['api', 'contest', contest.id, 'set-official'])) %>, {
+          player: user_id,
+          official: is_official ? '0' : '1'
+        }, function(data) {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            if (is_official) {
+              $item.removeClass('official');
+            } else {
+              $item.addClass('official');
+            }
+          }
+        });
+      });
+    });
+  </script>
+<% } %>
 <% include footer %>

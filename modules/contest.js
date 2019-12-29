@@ -285,7 +285,7 @@ app.get('/contest/:id/ranklist', async (req, res) => {
   }
 });
 
-app.post('/contest/:id/set-official', async (req, res) => {
+app.post('/api/contest/:id/set-official', async (req, res) => {
   try {
     let contest_id = parseInt(req.params.id);
     let contest = await Contest.findById(contest_id);
@@ -294,8 +294,8 @@ app.post('/contest/:id/set-official', async (req, res) => {
     if (!contest) throw new ErrorMessage('无此比赛。');
     if (!await contest.isSupervisior(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
 
-    let player_id = parseInt(req.query.player);
-    let is_official = req.query.official == '1';
+    let player_id = parseInt(req.body.player);
+    let is_official = req.body.official == '1';
 
     let player = await ContestPlayer.findOne({
       contest_id: contest_id,
@@ -306,11 +306,11 @@ app.post('/contest/:id/set-official', async (req, res) => {
     player.is_official = is_official;
     await player.save();
 
-    res.redirect(syzoj.utils.makeUrl(['contest', contest_id, 'ranklist']));
+    res.send({ error: null });
   } catch (e) {
     syzoj.log(e);
-    res.render('error', {
-      err: e
+    res.send({
+      error: e.message
     });
   }
 });
