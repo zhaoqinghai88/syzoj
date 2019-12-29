@@ -6,6 +6,10 @@ const baseDir = Path.join(syzoj.rootDir, 'uploads', 'quote_image');
 
 syzoj.quotes = [];
 
+function isValidImageExt(ext) {
+  return ext.startsWith('.') && ['png', 'jpg', 'gif'].includes(ext.slice(1));
+}
+
 function loadQuotes() {
   let result = [];
   fs.readdirSync(baseDir).forEach(dir => {
@@ -13,8 +17,8 @@ function loadQuotes() {
     let stat = fs.statSync(dirPath);
     if (stat.isDirectory()) {
       fs.readdirSync(dirPath).forEach(filename => {
-        let ext = Path.extname(filename).slice(1);
-        if (['png', 'jpg', 'gif'].includes(ext)) {
+        let ext = Path.extname(filename);
+        if (isValidImageExt(ext)) {
           let path = Path.join(dirPath, filename);
           let stat = fs.statSync(path);
           if (stat.isFile()) {
@@ -22,7 +26,7 @@ function loadQuotes() {
             result.push({
               from: dir,
               filename: filename,
-              type: ext,
+              type: ext.slice(1),
               time: stat.mtime,
               buffer: buffer
             });
@@ -36,6 +40,32 @@ function loadQuotes() {
 
 syzoj.loadQuotes = () => {
   syzoj.quotes = loadQuotes();
+};
+syzoj.findQuote = (from, filename) =>
+  syzoj.quotes.find(quote =>
+    quote.from === from && quote.filename === filename
+  );
+syzoj.addQuote = (from, filename, buffer) => {
+  let ext = Path.extname(filename);
+  if (!isValidImageExt(ext)) throw new ErrorMessage("扩展名不合法");
+  let path = Path.join(baseDir, from, filename);
+  if (fs.existsSync(path)) throw new ErrorMessage("文件已存在");
+  fs.ensureDirSync(Path.dirname(path));
+  fs.writeFileSync(path, buffer);
+  let stat = fs.statSync(path);
+  let quote = {
+    from, filename, type: ext.slice(1),
+    time: stat.mtime, buffer
+  };
+  syzoj.quotes.push(quote);
+  return quote;
+};
+syzoj.deleteQuote = (quote) => {
+  let oldPath = Path.join(baseDir, quote.from, quote.filename);
+  let newPath = Path.join(baseDir, ['deleted', quote.from, quote.filename].join('-'));
+  fs.renameSync(oldPath, newPath);
+  let index = syzoj.quotes.indexOf(quote);
+  syzoj.quotes.splice(index, 1);
 };
 
 try {
@@ -79,9 +109,7 @@ app.get('/quote/:from', (req, res) => quoteHandler(req, res));
 
 app.get('/quote/:from/:filename', (req, res) => {
   try {
-    let quote = syzoj.quotes.find(quote =>
-      quote.from === req.params.from && quote.filename === req.params.filename
-    );
+    let quote = syzoj.findQuote(req.params.from, req.params.filename);
     if (quote) {
       res.type(quote.type).send(quote.buffer);
     } else {

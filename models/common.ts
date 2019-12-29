@@ -78,7 +78,7 @@ export default class Model extends TypeORM.BaseEntity {
         }
         this.allCached = true;
       }
-      return caches.get(this.name).values().filter(x => !!x);
+      return ensureCache(this.name).values().filter(x => !!x);
     } else {
       return await doQuery();
     }

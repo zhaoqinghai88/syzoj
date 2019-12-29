@@ -14,6 +14,7 @@ const calcRating = require('../libs/rating');
 const TypeORM = require('typeorm');
 const randomstring = require('randomstring');
 const YAML = require('js-yaml');
+const fs = require('fs-extra');
 
 app.get('/admin/info', async (req, res) => {
   try {
@@ -748,12 +749,22 @@ app.post('/admin/hitokoto', async (req, res) => {
   }
 });
 
+let processQuoteData = (quote) => ({
+    from: quote.from,
+    filename: quote.filename,
+    type: quote.type,
+    time: syzoj.utils.formatDate(quote.time.getTime() / 1000),
+    size: syzoj.utils.formatSize(quote.buffer.length, 2),
+    url: syzoj.utils.makeQuoteUrl(quote.from, quote.filename)
+});
+let processAllQuotes = () => syzoj.quotes.map(processQuoteData);
+
 app.get('/admin/quote_image', async (req, res) => {
   try {
     if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
 
     res.render('admin_quote_image', {
-      quotes: syzoj.quotes
+      quotes: processAllQuotes()
     });
   } catch (e) {
     syzoj.log(e);
@@ -763,11 +774,76 @@ app.get('/admin/quote_image', async (req, res) => {
   }
 });
 
+app.get('/api/admin/quote_image/all', (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+    res.send({
+      error: null,
+      result: processAllQuotes()
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});
+
 app.post('/api/admin/quote_image/reload', (req, res) => {
   try {
     if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
     syzoj.loadQuotes();
-    res.send({ error: null });
+    res.send({
+      error: null,
+      result: processAllQuotes()
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});
+
+app.post('/api/admin/quote_image/add/:from', app.multer.array('file'), (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+    let result = [], message = [];
+    if (req.files) {
+      for (let file of req.files) {
+        try {
+          let buffer = fs.readFileSync(file.path);
+          fs.unlinkSync(file.path);
+          result.push(syzoj.addQuote(req.params.from, file.originalname, buffer));
+          message.push(file.originalname + " 上传成功");
+        } catch (e) {
+          syzoj.log(e);
+          message.push(file.originalname + " 上传失败：" + e.message);
+        }
+      }
+    }
+    res.send({
+      error: null,
+      message: message,
+      result: result.map(processQuoteData)
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});
+
+app.post('/api/admin/quote_image/delete/:from/:filename', (req, res) => {
+  try {
+    if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
+    let quote = syzoj.findQuote(req.params.from, req.params.filename);
+    if (!quote) throw new ErrorMessage("该语录未找到");
+    syzoj.deleteQuote(quote);
+    res.send({
+      error: null
+    });
   } catch (e) {
     syzoj.log(e);
     res.send({

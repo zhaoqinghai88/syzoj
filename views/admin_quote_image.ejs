@@ -1,17 +1,20 @@
 <% this.adminPage = 'quote_image'; %>
 <% include admin_header %>
 
-<div class="vueApp">
+<div id="vueApp">
   <div>
     <a class="ui small green button" @click="uploadHandler">
       <i class="plus icon"></i> 上传图片
     </a>
-    <a class="ui small blue button" style="margin-left: 1em;" @click="refreshHandler">
-      <i class="refresh icon"></i> 刷新列表
+    <a class="ui small blue button" style="margin-left: 1em;" @click="reloadList">
+      <i class="redo icon"></i> 刷新列表
+    </a>
+    <a class="ui small teal button" style="margin-left: 1em;" @click="reloadAll">
+      <i class="sync icon"></i> 重新加载
     </a>
   </div>
   <div class="ui divided items">
-    <div class="ui item" v-for="quote in quotes">
+    <div class="ui item" v-for="quote of quotes">
       <div class="image">
         <img :src="quote.url">
       </div>
@@ -25,14 +28,18 @@
         </div>
         <div class="extra">
           <div class="ui small compact right floated buttons">
-            <a class="ui button btn-rename">重命名</a>
-            <a class="ui red button btn-delete">删除</a>
+            <a class="ui blue button btn-preview" @click="previewItem(quote)">预览</a>
+            <a class="ui red button btn-delete" @click="deleteItem(quote)">删除</a>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<form id="upload-form" style="display: none;">
+  <input name="file" class="file" type="file" multiple>
+</form>
 
 <script src="<%- lib('vue/2.5.21/vue.min.js') %>"></script>
 
@@ -41,21 +48,204 @@
 let app = new Vue({
   el: '#vueApp',
   data: {
-    loading: true,
-    quotes: []
+    loading: false,
+    quotes: <%- JSON.stringify(quotes) %>
   },
   methods: {
     uploadHandler() {
-
+      modalPrompt({
+        title: '上传语录',
+        promptText: '你要上传谁的语录？',
+        defaultValue: '',
+        placeholder: '输入 TA 的名字……',
+        textApprove: '开始！',
+        textDeny: '算了吧'
+      }).then((from) => {
+        if (!from) return;
+        let $form = $('#upload-form');
+        let $input = $form.find('input.file');
+        $input.val('').one('input', () => {
+          if (!$input.prop('files').length) return;
+          let formData = new FormData($form.get(0));
+          $.ajax({
+            method: 'POST',
+            url: '/api/admin/quote_image/add/' + from,
+            data: formData,
+            mimeType: "multipart/form-data",
+            contentType: false,
+            cache: false,
+            processData: false
+          }).done((data) => {
+            data = JSON.parse(data);
+            if (data.error) {
+              modalConfirm({
+                title: '似乎出了点小问题……',
+                content: data.error,
+                textApprove: '关闭'
+              });
+            } else {
+              this.quotes.push(...data.result);
+              modalConfirm({
+                title: '上传完成',
+                content: data.message,
+                textApprove: '好的'
+              });
+            }
+          }).fail((data) => {
+              modalConfirm({
+                title: '似乎出了点小问题……',
+                content: '未知错误',
+                textApprove: '关闭'
+              });
+          });
+        }).get(0).click();
+      });
     },
-    refreshHandler() {
-
-    },
-    load() {
+    reloadList() {
       if (this.loading) return;
+      this.loading = true;
+      $.get('/api/admin/quote_image/all', (data) => {
+        if (data.error) {
+          alert(data.error);
+        } else {
+          this.quotes = data.result;
+        }
+        this.loading = false;
+      });
+    },
+    reloadAll() {
+      $.post('/api/admin/quote_image/reload', (data) => {
+        if (data.error) {
+          alert(data.error);
+        } else {
+          this.quotes = data.result;
+        }
+      });
+    },
+    previewItem(quote) {
+      modalConfirm({
+        title: "预览",
+        image: quote.url,
+        contentType: "dom",
+        textApprove: "关闭"
+      });
+    },
+    deleteItem(quote) {
+      modalConfirm({
+        title: "删除语录",
+        image: quote.url,
+        content: ["确定删除这条语录吗？", "来源：" + quote.from, "文件名：" + quote.filename],
+        textApprove: "确认",
+        textDeny: "取消"
+      }).then((answer) => {
+        if (!answer) return;
+        $.post('/api/admin/quote_image/delete/' + quote.from + '/' + quote.filename, (data) => {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            let index = this.quotes.indexOf(quote);
+            this.quotes.splice(index, 1);
+          }
+        });
+      })
     }
   }
 });
+
+</script>
+
+<div id="modal-confirm" class="ui modal">
+  <div class="header"></div>
+  <div class="content"></div>
+  <div class="actions">
+    <div class="ui negative button"></div>
+    <div class="ui positive button"></div>
+  </div>
+</div>
+<div id="modal-prompt" class="ui modal">
+  <div class="header"></div>
+  <div class="content">
+    <p class="prompt-text"></p>
+    <div class="ui fluid input">
+      <input type="text">
+    </div>
+  </div>
+  <div class="actions">
+    <div class="ui negative button"></div>
+    <div class="ui positive button"></div>
+  </div>
+</div>
+
+<script>
+
+function modalConfirm({ title, image, content, contentType, textApprove, textDeny }) {
+  return new Promise((resolve) => {
+    let $modal = $('#modal-confirm');
+    $modal.find('.header').text(title);
+    let $content = $modal.find('.content');
+    $content.html('');
+    if (image) {
+      $content.addClass('image').append($('<img>').prop('src', image));
+      let $desc = $('<div class="description">');
+      $content.append($desc);
+      $content = $desc;
+    } else {
+      $content.removeClass('image');
+    }
+    if (contentType === 'dom') {
+      $content.html('').append(content);
+    } else if (contentType === 'html') {
+      $content.html(content);
+    } else {
+      if (!Array.isArray(content)) content = [content];
+      for (let line of content) {
+        $content.append($('<p>').text(line));
+      }
+    }
+    [
+      [$modal.find('.positive.button'), textApprove],
+      [$modal.find('.negative.button'), textDeny]
+    ].forEach(([$btn, text]) => {
+      if (text) {
+        $btn.show().text(text);
+      } else {
+        $btn.hide();
+      }
+    });
+    $modal.modal({
+      onApprove: () => resolve(true),
+      onDeny: () => resolve(false),
+      onHide: () => resolve(null)
+    }).modal('show');
+  });
+}
+
+function modalPrompt({ title, promptText, placeholder, defaultValue, textApprove, textDeny }) {
+  return new Promise((resolve) => {
+    let $modal = $('#modal-prompt');
+    $modal.find('.header').text(title);
+    let $content = $modal.find('.content');
+    $content.find('.prompt-text').text(promptText);
+    let $input = $content.find('input');
+    $input.val(defaultValue).prop('placeholder', placeholder);
+    [
+      [$modal.find('.positive.button'), textApprove],
+      [$modal.find('.negative.button'), textDeny]
+    ].forEach(([$btn, text]) => {
+      if (text) {
+        $btn.show().text(text);
+      } else {
+        $btn.hide();
+      }
+    });
+    $modal.modal({
+      onApprove: () => resolve($input.val()),
+      onDeny: () => resolve(null),
+      onHide: () => resolve(null)
+    }).modal('show');
+    $input.focus();
+  });
+}
 
 </script>
 
