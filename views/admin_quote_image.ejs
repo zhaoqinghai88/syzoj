@@ -1,47 +1,61 @@
 <% this.adminPage = 'quote_image'; %>
 <% include admin_header %>
-<div>
-  <a class="ui small green button">
-    <i class="plus icon"></i> 上传图片
-  </a>
-  <a class="ui small blue button" style="margin-left: 1em;">
-    <i class="refresh icon"></i> 刷新列表
-  </a>
-</div>
-<div class="ui divided items">
-</div>
 
-
-<script id="quoteItemTemplate" type="text/x-template">
-  <div class="ui items">
-    <template v-for="quote in quotes">
-      <div class="ui item">
-        <div class="image">
-          <img :src="quote.url">
+<div class="vueApp">
+  <div>
+    <a class="ui small green button" @click="uploadHandler">
+      <i class="plus icon"></i> 上传图片
+    </a>
+    <a class="ui small blue button" style="margin-left: 1em;" @click="refreshHandler">
+      <i class="refresh icon"></i> 刷新列表
+    </a>
+  </div>
+  <div class="ui divided items">
+    <div class="ui item" v-for="quote in quotes">
+      <div class="image">
+        <img :src="quote.url">
+      </div>
+      <div class="content">
+        <div class="header">{{ quote.filename }}</div>
+        <div class="meta">
+          <span class="from">from {{ quote.from }}</span>
+          <span class="type">{{ quote.type }}</span>
+          <span class="size">{{ quote.size }}</span>
+          <span class="time">{{ quote.time }}</span>
         </div>
-        <div class="content">
-          <div class="header">{{ quote.filename }}</div>
-          <div class="meta">
-            <span class="from">from {{ quote.from }}</span>
-            <span class="type">{{ quote.type }}</span>
-            <span class="size">{{ quote.size }}</span>
-            <span class="time">{{ quote.time }}</span>
-          </div>
-          <div class="extra">
-            <div class="ui small compact right floated buttons">
-              <a class="ui button btn-rename">重命名</a>
-              <a class="ui red button btn-delete">删除</a>
-            </div>
+        <div class="extra">
+          <div class="ui small compact right floated buttons">
+            <a class="ui button btn-rename">重命名</a>
+            <a class="ui red button btn-delete">删除</a>
           </div>
         </div>
       </div>
-    </template>
+    </div>
   </div>
-</script>
+</div>
 
 <script src="<%- lib('vue/2.5.21/vue.min.js') %>"></script>
 
 <script>
+
+let app = new Vue({
+  el: '#vueApp',
+  data: {
+    loading: true,
+    quotes: []
+  },
+  methods: {
+    uploadHandler() {
+
+    },
+    refreshHandler() {
+
+    },
+    load() {
+      if (this.loading) return;
+    }
+  }
+});
 
 </script>
 
