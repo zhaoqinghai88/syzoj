@@ -59,7 +59,13 @@ let app = new Vue({
         defaultValue: '',
         placeholder: '输入 TA 的名字……',
         textApprove: '开始！',
-        textDeny: '算了吧'
+        textDeny: '算了吧',
+        validate(text) {
+          if (!text) return "名字还是要有的";
+          if (text.length > 32) return "名字过长";
+          if (!/^[0-9a-zA-Z-_]+$/.test(text)) return "名字过于奇怪";
+          return null;
+        }
       }).then((from) => {
         if (!from) return;
         let $form = $('#upload-form');
@@ -69,7 +75,7 @@ let app = new Vue({
           let formData = new FormData($form.get(0));
           $.ajax({
             method: 'POST',
-            url: '/api/admin/quote_image/add/' + from,
+            url: '/api/admin/quote_image/add/' + encodeURIComponent(from),
             data: formData,
             mimeType: "multipart/form-data",
             contentType: false,
@@ -84,7 +90,7 @@ let app = new Vue({
                 textApprove: '关闭'
               });
             } else {
-              this.quotes.push(...data.result);
+              this.quotes.unshift(...data.result);
               modalConfirm({
                 title: '上传完成',
                 content: data.message,
@@ -139,7 +145,8 @@ let app = new Vue({
         textDeny: "取消"
       }).then((answer) => {
         if (!answer) return;
-        $.post('/api/admin/quote_image/delete/' + quote.from + '/' + quote.filename, (data) => {
+        let src = encodeURIComponent(quote.from) + '/' + encodeURIComponent(quote.filename);
+        $.post('/api/admin/quote_image/delete/' + src, (data) => {
           if (data.error) {
             alert(data.error);
           } else {
@@ -169,6 +176,7 @@ let app = new Vue({
     <div class="ui fluid input">
       <input type="text">
     </div>
+    <p class="error-text" style="color: red; margin-top: 1em;"></p>
   </div>
   <div class="actions">
     <div class="ui negative button"></div>
@@ -220,14 +228,18 @@ function modalConfirm({ title, image, content, contentType, textApprove, textDen
   });
 }
 
-function modalPrompt({ title, promptText, placeholder, defaultValue, textApprove, textDeny }) {
+function modalPrompt({ title, promptText, placeholder, defaultValue, textApprove, textDeny, validate }) {
   return new Promise((resolve) => {
     let $modal = $('#modal-prompt');
     $modal.find('.header').text(title);
     let $content = $modal.find('.content');
     $content.find('.prompt-text').text(promptText);
-    let $input = $content.find('input');
+    let $inputBox = $content.find('.ui.input');
+    $inputBox.removeClass('error');
+    let $input = $inputBox.find('input');
     $input.val(defaultValue).prop('placeholder', placeholder);
+    let $error = $modal.find('.error-text');
+    $error.hide();
     [
       [$modal.find('.positive.button'), textApprove],
       [$modal.find('.negative.button'), textDeny]
@@ -239,7 +251,22 @@ function modalPrompt({ title, promptText, placeholder, defaultValue, textApprove
       }
     });
     $modal.modal({
-      onApprove: () => resolve($input.val()),
+      onApprove: () => {
+        let value = $input.val();
+        if (typeof validate === 'function') {
+          let result = validate(value);
+          if (result) {
+            $inputBox.addClass('error');
+            $error.text(result).show();
+            $input.one('input', () => {
+              $inputBox.removeClass('error');
+              $error.hide();
+            }).focus();
+            return false;
+          }
+        }
+        resolve(value);
+      },
       onDeny: () => resolve(null),
       onHide: () => resolve(null)
     }).modal('show');
