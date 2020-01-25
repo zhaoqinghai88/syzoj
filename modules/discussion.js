@@ -75,6 +75,8 @@ app.get('/discussion/problem/:pid', async (req, res) => {
 
 app.get('/article/:id', async (req, res) => {
   try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
+    
     let id = parseInt(req.params.id);
     let article = await Article.findById(id);
     if (!article) throw new ErrorMessage('无此帖子。');
@@ -105,6 +107,8 @@ app.get('/article/:id', async (req, res) => {
         throw new ErrorMessage('您没有权限进行此操作。');
       }
     }
+
+    await article.updateViews(res.locals.user);
 
     res.render('article', {
       article: article,
@@ -201,11 +205,7 @@ app.post('/article/:id/delete', async (req, res) => {
       if (!await article.isAllowedEditBy(res.locals.user)) throw new ErrorMessage('您没有权限进行此操作。');
     }
 
-    await Promise.all((await ArticleComment.find({
-      article_id: article.id
-    })).map(comment => comment.destroy()))
-
-    await article.destroy();
+    await article.delete();
 
     res.redirect(syzoj.utils.makeUrl(['discussion', 'global']));
   } catch (e) {
