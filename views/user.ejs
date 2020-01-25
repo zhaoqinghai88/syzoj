@@ -35,13 +35,14 @@
                     <a style="float: right; "><i class="star icon"></i>积分 <%= show_user.rating %></a>
                 </div>
             </div>
-            <h4 class="ui top attached block header">通过的题目</h4>
-            <div class="ui bottom attached segment">
-                <% for (let problem of show_user.ac_problems) { %>
-                    <a href="<%= syzoj.utils.makeUrl(['problem', problem]) %>"><%= problem %></a>
-                <% } %>
-            </div>
-
+            <% if (show_user.ac_problems.length) { %>
+                <h4 class="ui top attached block header">通过的题目</h4>
+                <div class="ui bottom attached segment">
+                    <% for (let problem of show_user.ac_problems) { %>
+                        <a href="<%= syzoj.utils.makeUrl(['problem', problem]) %>"><%= problem %></a>
+                    <% } %>
+                </div>
+            <% } %>
         </div>
         <div class="eleven wide column">
             <div class="ui grid">
