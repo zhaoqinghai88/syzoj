@@ -12,6 +12,9 @@
     <a class="ui small teal button" style="margin-left: 1em;" @click="reloadAll">
       <i class="sync icon"></i> 重新加载
     </a>
+    <a class="ui small violet button" style="margin-left: 1em;" @click="showStatistics">
+      <i class="info icon"></i> 统计信息
+    </a>
   </div>
   <div class="ui divided items">
     <div class="ui item" v-for="quote of quotes">
@@ -23,7 +26,7 @@
         <div class="meta">
           <span class="from">from {{ quote.from }}</span>
           <span class="type">{{ quote.type }}</span>
-          <span class="size">{{ quote.size }}</span>
+          <span class="size">{{ formatSize(quote.size, 2) }}</span>
           <span class="time">{{ quote.time }}</span>
         </div>
         <div class="extra">
@@ -33,6 +36,35 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+  <div id="modal-stat" class="ui modal">
+    <div class="header">统计信息</div>
+    <div class="content">
+      <table v-if="stat" class="ui center aligned celled table">
+        <thead>
+          <tr>
+            <th>来源</th>
+            <th>总数</th>
+            <th>文件大小</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="detail in stat.details">
+            <td>{{ detail.from }}</td>
+            <td>{{ detail.count }}</td>
+            <td>{{ formatSize(detail.size, 2) }}</td>
+          </tr>
+          <tr>
+            <td>总计</td>
+            <td>{{ stat.summary.count }}</td>
+            <td>{{ formatSize(stat.summary.size, 2) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <div class="ui positive button">确定</div>
     </div>
   </div>
 </div>
@@ -45,11 +77,37 @@
 
 <script>
 
+function formatSize(x, precision) {
+      if (typeof x !== 'number') return '--';
+      let unit = 'B', units = ['K', 'M', 'G', 'T'];
+      for (let i in units) if (x > 1024) x /= 1024, unit = units[i];
+      var fixed = x === Math.round(x) ? x.toString() : x.toFixed(precision);
+      return fixed + ' ' + unit;
+}
+
+class QuoteStat {
+  constructor() {
+    this.count = 0;
+    this.size = 0;
+  }
+  append(quote) {
+    this.count += 1;
+    this.size += quote.size;
+  }
+  toPlain() {
+    return {
+      count: this.count,
+      size: this.size
+    };
+  }
+}
+
 let app = new Vue({
   el: '#vueApp',
   data: {
     loading: false,
-    quotes: <%- JSON.stringify(quotes) %>
+    quotes: <%- JSON.stringify(quotes) %>,
+    stat: null
   },
   methods: {
     uploadHandler() {
@@ -155,6 +213,22 @@ let app = new Vue({
           }
         });
       })
+    },
+    showStatistics() {
+      let details = new Map(), summary = new QuoteStat;
+      for (let quote of this.quotes) {
+        let detail = details.get(quote.from);
+        if (!detail) {
+          details.set(quote.from, detail = new QuoteStat);
+        }
+        detail.append(quote);
+        summary.append(quote);
+      }
+      this.stat = {
+        details: Array.from(details).map(([from, detail]) => ({ from, ...detail.toPlain() })),
+        summary: summary.toPlain()
+      };
+      $('#modal-stat').modal('show');
     }
   }
 });

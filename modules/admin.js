@@ -754,7 +754,7 @@ let processQuoteData = (quote) => ({
     filename: quote.filename,
     type: quote.type,
     time: syzoj.utils.formatDate(quote.time.getTime() / 1000),
-    size: syzoj.utils.formatSize(quote.buffer.length, 2),
+    size: quote.buffer.length,
     url: syzoj.utils.makeQuoteUrl(quote.from, quote.filename)
 });
 let processAllQuotes = () => syzoj.quotes.map(processQuoteData);
