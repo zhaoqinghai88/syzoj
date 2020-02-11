@@ -142,5 +142,11 @@
     "highlight": "vbnet",
     "version": "Mono 4.7",
     "editor": "vbscript"
+  },
+  "wenyan": {
+    "show": "文言",
+    "highlight": "plain",
+    "version": "WENYAN LANG 0.3.1",
+    "editor": "plain"
   }
 }
