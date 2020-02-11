@@ -1,6 +1,7 @@
 
 const fs = require('fs-extra');
 const Path = require('path');
+const randomstring = require('randomstring');
 
 const baseDir = Path.join(syzoj.rootDir, 'uploads', 'quote_image');
 
@@ -62,7 +63,7 @@ syzoj.addQuote = (from, filename, buffer) => {
 };
 syzoj.deleteQuote = (quote) => {
   let oldPath = Path.join(baseDir, quote.from, quote.filename);
-  let newPath = Path.join(baseDir, ['deleted', quote.from, quote.filename].join('-'));
+  let newPath = Path.join(baseDir, ['deleted', randomstring.generate(8), quote.from, quote.filename].join('-'));
   fs.renameSync(oldPath, newPath);
   let index = syzoj.quotes.indexOf(quote);
   syzoj.quotes.splice(index, 1);
