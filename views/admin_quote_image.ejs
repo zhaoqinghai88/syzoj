@@ -175,6 +175,12 @@ let app = new Vue({
           this.quotes = data.result;
         }
         this.loading = false;
+      }).fail((data) => {
+        modalConfirm({
+          title: '似乎出了点小问题……',
+          content: '未知错误',
+          textApprove: '关闭'
+        });
       });
     },
     reloadAll() {
@@ -184,7 +190,13 @@ let app = new Vue({
         } else {
           this.quotes = data.result;
         }
-      });
+      }).fail((data) => {
+        modalConfirm({
+          title: '似乎出了点小问题……',
+          content: '未知错误',
+          textApprove: '关闭'
+        });
+      });;
     },
     previewItem(quote) {
       modalConfirm({
