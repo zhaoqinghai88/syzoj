@@ -84,7 +84,6 @@ app.get('/article/:id', async (req, res) => {
     await article.loadRelationships();
     article.allowedEdit = await article.isAllowedEditBy(res.locals.user);
     article.allowedComment = await article.isAllowedCommentBy(res.locals.user);
-    article.content = await syzoj.utils.markdown(article.content);
 
     let where = { article_id: id };
     let commentsCount = await ArticleComment.countForPagination(where);
@@ -109,6 +108,8 @@ app.get('/article/:id', async (req, res) => {
     }
 
     await article.updateViews(res.locals.user);
+    
+    article.content = await syzoj.utils.markdown(article.content);
 
     res.render('article', {
       article: article,
