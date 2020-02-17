@@ -46,6 +46,13 @@
           <label>　</label>
         </div>
       </div>
+      <div class="inline field">
+        <label class="ui header">自动排版页面（在中英文字符间加入空格）</label>
+        <div class="ui toggle checkbox">
+          <input id="auto_spacing_page" name="auto_spacing_page" type="checkbox" <% if (edited_user.auto_spacing_page) { %> checked<% } %>>
+          <label>　</label>
+        </div>
+      </div>
       <div class="field">
       <label for="information">个性签名</label>
         <textarea class="markdown-edit" rows="5" id="information" name="information"><%= edited_user.information %></textarea>
