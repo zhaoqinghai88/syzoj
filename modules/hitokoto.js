@@ -46,6 +46,7 @@ app.get('/api/hitokoto', async (req, res, next) => {
   try {
     const config = syzoj.config.custom_hitokoto;
     if (!config || !config.enabled) return next();
+    if (!res.locals.user) throw new ErrorMessage("登录后才可以查看语录");
     const list = syzoj.hitokoto.list;
     if (!list.length) throw new ErrorMessage("这里什么都没有");
     res.send(weightedRandomFrom(list.map(

@@ -85,14 +85,15 @@
         <div class="ui bottom attached center aligned segment">
           <div class="ui active centered inline loader" id="hitokoto-loader"></div>
           <script>
-          $.get(<%- JSON.stringify(syzoj.config.custom_hitokoto.enabled ? "/api/hitokoto" : "https://sslapi.hitokoto.cn/?c=a") %>, function (data) {
+          <% let showCustomHitokoto = user && syzoj.config.custom_hitokoto.enabled; %>
+          $.get(<%- JSON.stringify(showCustomHitokoto ? "/api/hitokoto" : "https://sslapi.hitokoto.cn/?c=a") %>, function (data) {
             if (typeof data === 'string') data = JSON.parse(data);
             if (data.error) {
               console.log(data.error);
               return;
             }
             $('#hitokoto-loader').removeClass('active');
-            $('#hitokoto-content').css('display', '').<%- syzoj.config.custom_hitokoto.enabled ? 'html' : 'text' %>(data.hitokoto);
+            $('#hitokoto-content').css('display', '').<%- showCustomHitokoto ? 'html' : 'text' %>(data.hitokoto);
             if (data.from) {
               $('#hitokoto-from').css('display', '').text('——' + data.from);
             }
