@@ -105,8 +105,20 @@ function quoteHandler(req, res) {
   }
 };
 
-app.get('/quote', (req, res) => quoteHandler(req, res));
-app.get('/quote/:from', (req, res) => quoteHandler(req, res));
+app.use('/quote', (req, res, next) => {
+  try {
+    if (!res.locals.user) throw new ErrorMessage("登录后才可以查看语录。");
+    return next();
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
+  }
+});
+
+app.get('/quote', quoteHandler);
+app.get('/quote/:from', quoteHandler);
 
 app.get('/quote/:from/:filename', (req, res) => {
   try {
