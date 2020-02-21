@@ -3,7 +3,7 @@
 <div class="padding">
   <div class="ui grid" style="margin-bottom: 10px; ">
     <div class="row" style="white-space: nowrap; ">
-      <div class="seven wide column">
+      <div class="nine wide column">
         <% if (typeof tags !== 'undefined') { %>
           <% for (let arr of tags) { %>
             <% for (let tag of arr) { %>
@@ -24,59 +24,68 @@
           </form>
         <% } %>
       </div>
-      <div class="nine wide right aligned column">
-        <div class="ui toggle checkbox" id="show_tag">
-          <style>
-            .show_tag_controled {
-              overflow: hidden;
-              float: right;
-              text-align: right;
-            }
-            .table_problems > tbody > tr {
-              height: 44px;
-            }
-            .table_problems.todo_colored > tbody > tr.todo {
-              background: #6666660c;
-            }
-            .table_problems.todo_colored > tbody > tr.todo.solved {
-              background: #21ba450c;
-            }
-            .table_problems.todo_colored > tbody > tr.todo.attempted {
-              background: #2185d00c;
-            }
-          </style>
-          <style id="show_tag_style"></style>
-          <script data-cfasync="false">
-          if (localStorage.getItem('show_tag') === '1') {
-            document.write('<input type="checkbox" checked>');
-            document.getElementById('show_tag_style').innerHTML = '';
-          } else {
-            document.write('<input type="checkbox">');
-            document.getElementById('show_tag_style').innerHTML = '.show_tag_controled .tag_hidden { display: none; }';
-          }
-          if (localStorage.getItem('todo_colored') === '1') {
-            $(function() {
-              $('.table_problems').addClass('todo_colored');
-            });
-          }
-          </script>
-
-          <script>
-          $(function () {
-            $('#show_tag').checkbox('setting', 'onChange', function () {
-              let checked = $('#show_tag').checkbox('is checked');
-              localStorage.setItem('show_tag', checked ? '1' : '0');
-              if (checked) {
+      <div class="seven wide right aligned column">
+        <div class="ui floating circular icon mini dropdown button" id="options_dropdown">
+          <i class="cog icon"></i>
+          <div class="menu">
+            <div class="ui toggle checkbox item" id="show_tag">
+              <style id="show_tag_style"></style>
+              <script data-cfasync="false">
+              if (localStorage.getItem('show_tag') === '1') {
+                document.write('<input type="checkbox" checked>');
                 document.getElementById('show_tag_style').innerHTML = '';
               } else {
+                document.write('<input type="checkbox">');
                 document.getElementById('show_tag_style').innerHTML = '.show_tag_controled .tag_hidden { display: none; }';
               }
-            });
-          });
-          </script>
-          <label>显示隐藏标签</label>
+              </script>
+
+              <script>
+              $(function () {
+                $('#show_tag').checkbox('setting', 'onChange', function () {
+                  let checked = $('#show_tag').checkbox('is checked');
+                  localStorage.setItem('show_tag', checked ? '1' : '0');
+                  if (checked) {
+                    document.getElementById('show_tag_style').innerHTML = '';
+                  } else {
+                    document.getElementById('show_tag_style').innerHTML = '.show_tag_controled .tag_hidden { display: none; }';
+                  }
+                });
+              });
+              </script>
+              <label>显示隐藏标签</label>
+            </div>
+            <div class="ui toggle checkbox item" id="highlight_todo">
+              <script data-cfasync="false">
+              if (localStorage.getItem('highlight_todo') === '1') {
+                document.write('<input type="checkbox" checked>');
+                $(function() {
+                  $('.table_problems').addClass('highlight_todo');
+                });
+              } else {
+                document.write('<input type="checkbox">');
+              }
+              </script>
+
+              <script>
+              $(function () {
+                $('#highlight_todo').checkbox('setting', 'onChange', function () {
+                  let checked = $('#highlight_todo').checkbox('is checked');
+                  localStorage.setItem('highlight_todo', checked ? '1' : '0');
+                  if (checked) {
+                    $('.table_problems').addClass('highlight_todo');
+                  } else {
+                    $('.table_problems').removeClass('highlight_todo');
+                  }
+                });
+              });
+              </script>
+              <label>高亮任务计划</label>
+            </div>
+          </div>
         </div>
-        <div style="margin-left: 10px; display: inline-block; ">
+        
+        <div style="display: inline-block; ">
           <% if (allowedManageTag) { %>
             <% if (typeof tags !== 'undefined' && tags.length === 1 && tags[0].length === 1) { %>
               <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problems', 'tag', tags[0][0].id, 'edit']) %>" class="ui labeled icon mini blue button"><i class="write icon"></i> 编辑标签</a>
@@ -108,6 +117,29 @@
       </div>
     </div>
   </div>
+  
+  <style>
+    .show_tag_controled {
+      overflow: hidden;
+      float: right;
+      text-align: right;
+    }
+    .table_problems > tbody > tr {
+      height: 44px;
+    }
+    .table_problems.highlight_todo > tbody > tr.todo {
+      background: #6666660c;
+    }
+    .table_problems.highlight_todo > tbody > tr.todo.solved {
+      background: #21ba450c;
+    }
+    .table_problems.highlight_todo > tbody > tr.todo.attempted {
+      background: #2185d00c;
+    }
+    #options_dropdown > .menu > .item:not(:first-child) {
+      border-top: 1px solid rgba(34, 36, 38, .15);
+    }
+  </style>
 
   <% if (problems.length) { %>
   <div style="margin-bottom: 30px; ">
@@ -298,7 +330,8 @@ $(function () {
         } else {
           toggleTag(tagID, 'all');
         }
-      }
+      },
+      selectOnKeydown: false
     });
     $tag_search.find('.item[data-content]').popup({
       position: 'left center'
@@ -309,6 +342,10 @@ $(function () {
     toggleTag(tagID, 'all');
   });
   $('#add_problem_dropdown').dropdown();
+  $('#options_dropdown').dropdown({
+    action: "nothing",
+    selectOnKeydown: false
+  });
 });
 </script>
 <script>
