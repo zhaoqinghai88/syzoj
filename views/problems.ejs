@@ -35,6 +35,15 @@
             .table_problems > tbody > tr {
               height: 44px;
             }
+            .table_problems.todo_colored > tbody > tr.todo {
+              background: #7777770c;
+            }
+            .table_problems.todo_colored > tbody > tr.todo.solved {
+              background: #21ba450c;
+            }
+            .table_problems.todo_colored > tbody > tr.todo.attempted {
+              background: #2185d00c;
+            }
           </style>
           <style id="show_tag_style"></style>
           <script data-cfasync="false">
@@ -44,6 +53,11 @@
           } else {
             document.write('<input type="checkbox">');
             document.getElementById('show_tag_style').innerHTML = '.show_tag_controled .tag_hidden { display: none; }';
+          }
+          if (localStorage.getItem('todo_colored') === '1') {
+            $(function() {
+              $('.table_problems').addClass('todo_colored');
+            });
           }
           </script>
 
@@ -115,7 +129,20 @@
     <tbody>
     <% for (let problem of problems) { %>
         <% if (problem.is_public || problem.allowedEdit) { %>
-        <tr>
+        <%
+          let classList = [];
+          if (user) {
+            if (todoList.has(problem.id)) classList.push('todo');
+            if (problem.judge_state) {
+              if (problem.judge_state.status === 'Accepted') {
+                classList.push('solved');
+              } else {
+                classList.push('attempted');
+              }
+            }
+          }
+        %>
+        <tr class="<%= classList.join(' ') %>">
             <% if (user) { %>
                 <td>
                 <% if (problem.judge_state) { %>

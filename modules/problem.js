@@ -67,11 +67,17 @@ app.get('/problems', async (req, res) => {
 
     let allTags = await getAllTags();
 
+    let todoList = null;
+    if (res.locals.user) {
+      todoList = new Set(await res.locals.user.getTodoList());
+    }
+
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       showTagFilter: true,
       allTags: allTags,
+      todoList: todoList,
       paginate: paginate,
       curSort: sort,
       curOrder: order === 'asc'
@@ -148,10 +154,15 @@ app.get('/problems/search', async (req, res) => {
       });
     } else {
       let allTags = await getAllTags();
+      let todoList = null;
+      if (res.locals.user) {
+        todoList = new Set(await res.locals.user.getTodoList());
+      }
       res.render('problems', {
         allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
         problems: problems,
         allTags: allTags,
+        todoList: todoList,
         showTagFilter: false,
         paginate: paginate,
         curSort: sort,
@@ -237,12 +248,18 @@ app.get('/problems/tag/:tagIDs', async (req, res, next) => {
 
     let allTags = await getAllTags();
 
+    let todoList = null;
+    if (res.locals.user) {
+      todoList = new Set(await res.locals.user.getTodoList());
+    }
+
     res.render('problems', {
       allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
       problems: problems,
       tags: tags,
       tagIDs: tagIDs,
       allTags: allTags,
+      todoList: todoList,
       showTagFilter: true,
       paginate: paginate,
       curSort: sort,
