@@ -343,8 +343,10 @@ $(function () {
   });
   $('#add_problem_dropdown').dropdown();
   $('#options_dropdown').dropdown({
+    on: 'hover',
     action: "nothing",
-    selectOnKeydown: false
+    selectOnKeydown: false,
+    transition: 'fade down'
   });
 });
 </script>
