@@ -76,6 +76,7 @@
           </div>
           <div class="four wide column">
             <status-label :status="getSubtaskResult(subtask)" :indetail="true" :progress="getProgress($index)"></status-label>
+            <i class="red bug icon" style="margin-left: .25em;" v-if="checkSubtaskDiagnostics(subtask)"></i>
           </div>
           <div class="three wide column" v-if="subtask.score != null">
             得分：<span style="font-weight: normal; ">{{ Math.trunc(subtask.score) }}</span>
@@ -93,6 +94,7 @@
                 </div>
                 <div class="four wide column">
                   <status-label :status="getTestcaseStatus(curCase)" :indetail="true"></status-label>
+                  <i class="red bug icon" style="margin-left: .25em;" v-if="checkTestcaseOK(curCase) && curCase.result.diagnostics"></i>
                 </div>
                 <template v-if="checkTestcaseOK(curCase)">
                   <div class="three wide column">
@@ -254,6 +256,9 @@ const vueApp = new Vue({
       } else {
         return "System Error";
       }
+    },
+    checkSubtaskDiagnostics(t) {
+      return t.cases.some(c => this.checkTestcaseOK(c) && c.result.diagnostics);
     },
     getTestcaseStatus(c) {
       if (c.status === TaskStatus.Done) {
