@@ -2,115 +2,119 @@
 <% include header %>
 <div class="padding">
   <div class="ui grid" style="margin-bottom: 10px; ">
-    <div class="row" style="white-space: nowrap; ">
-      <div class="nine wide column">
-        <% if (typeof tags !== 'undefined') { %>
-          <% for (let arr of tags) { %>
-            <% for (let tag of arr) { %>
-              <a href="javascript:;" data-tag-id="<%= tag.id %>" class="ui tiny <%= tag.color %> label label_toggle_tag"<% if (arr !== tags[0] && tag === arr[0]) { %> style="margin-left: 1em;"<% } %>>
-                <%= tag.name %>
-              </a>
-            <% } %>
-          <% } %>
-        <% } else { %>
-          <form action="<%= syzoj.utils.makeUrl(['problems', 'search']) %>" method="get">
-            <div class="ui search" style="width: 280px; height: 28px; margin-top: -5.3px; ">
-              <div class="ui left icon input" style="width: 100%; ">
-                <input class="prompt" style="width: 100%; " type="text" value="<%= req.query.keyword %>" placeholder="ID / 题目名 …" name="keyword">
-                <i class="search icon"></i>
+    <div class="row">
+      <div class="column top_toolbar">
+        <div class="left_bar">
+          <% if (typeof tags !== 'undefined') { %>
+            <% for (let arr of tags) { %>
+              <div class="tag_group">
+              <% for (let tag of arr) { %>
+                <a href="javascript:;" data-tag-id="<%= tag.id %>" class="ui tiny <%= tag.color %> label label_toggle_tag">
+                  <%= tag.name %>
+                </a>
+              <% } %>
               </div>
-              <div class="results" style="width: 100%; "></div>
-            </div>
-          </form>
-        <% } %>
-      </div>
-      <div class="seven wide right aligned column">
-        <div class="ui floating circular icon mini dropdown button" id="options_dropdown">
-          <i class="cog icon"></i>
-          <div class="menu">
-            <div class="ui toggle checkbox item" id="show_tag">
-              <style id="show_tag_style"></style>
-              <script data-cfasync="false">
-              if (localStorage.getItem('show_tag') === '1') {
-                document.write('<input type="checkbox" checked>');
-                document.getElementById('show_tag_style').innerHTML = '';
-              } else {
-                document.write('<input type="checkbox">');
-                document.getElementById('show_tag_style').innerHTML = '.show_tag_controled .tag_hidden { display: none; }';
-              }
-              </script>
+            <% } %>
+          <% } else { %>
+            <form action="<%= syzoj.utils.makeUrl(['problems', 'search']) %>" method="get">
+              <div class="ui search" style="width: 280px; height: 28px; margin-top: -5.3px; ">
+                <div class="ui left icon input" style="width: 100%; ">
+                  <input class="prompt" style="width: 100%; " type="text" value="<%= req.query.keyword %>" placeholder="ID / 题目名 …" name="keyword">
+                  <i class="search icon"></i>
+                </div>
+                <div class="results" style="width: 100%; "></div>
+              </div>
+            </form>
+          <% } %>
+        </div>
+        <div class="right_bar">
+          <div class="ui floating circular icon mini dropdown button" id="options_dropdown">
+            <i class="cog icon"></i>
+            <div class="menu">
+              <div class="ui toggle checkbox item" id="show_tag">
+                <style id="show_tag_style"></style>
+                <script data-cfasync="false">
+                if (localStorage.getItem('show_tag') === '1') {
+                  document.write('<input type="checkbox" checked>');
+                  document.getElementById('show_tag_style').innerHTML = '';
+                } else {
+                  document.write('<input type="checkbox">');
+                  document.getElementById('show_tag_style').innerHTML = '.show_tag_controled .tag_hidden { display: none; }';
+                }
+                </script>
 
-              <script>
-              $(function () {
-                $('#show_tag').checkbox('setting', 'onChange', function () {
-                  let checked = $('#show_tag').checkbox('is checked');
-                  localStorage.setItem('show_tag', checked ? '1' : '0');
-                  if (checked) {
-                    document.getElementById('show_tag_style').innerHTML = '';
-                  } else {
-                    document.getElementById('show_tag_style').innerHTML = '.show_tag_controled .tag_hidden { display: none; }';
-                  }
+                <script>
+                $(function () {
+                  $('#show_tag').checkbox('setting', 'onChange', function () {
+                    let checked = $('#show_tag').checkbox('is checked');
+                    localStorage.setItem('show_tag', checked ? '1' : '0');
+                    if (checked) {
+                      document.getElementById('show_tag_style').innerHTML = '';
+                    } else {
+                      document.getElementById('show_tag_style').innerHTML = '.show_tag_controled .tag_hidden { display: none; }';
+                    }
+                  });
                 });
-              });
-              </script>
-              <label>显示隐藏标签</label>
-            </div>
-            <div class="ui toggle checkbox item" id="highlight_todo">
-              <script data-cfasync="false">
-              if (localStorage.getItem('highlight_todo') === '1') {
-                document.write('<input type="checkbox" checked>');
-                $(function() {
-                  $('.table_problems').addClass('highlight_todo');
-                });
-              } else {
-                document.write('<input type="checkbox">');
-              }
-              </script>
-
-              <script>
-              $(function () {
-                $('#highlight_todo').checkbox('setting', 'onChange', function () {
-                  let checked = $('#highlight_todo').checkbox('is checked');
-                  localStorage.setItem('highlight_todo', checked ? '1' : '0');
-                  if (checked) {
+                </script>
+                <label>显示隐藏标签</label>
+              </div>
+              <div class="ui toggle checkbox item" id="highlight_todo">
+                <script data-cfasync="false">
+                if (localStorage.getItem('highlight_todo') === '1') {
+                  document.write('<input type="checkbox" checked>');
+                  $(function() {
                     $('.table_problems').addClass('highlight_todo');
-                  } else {
-                    $('.table_problems').removeClass('highlight_todo');
-                  }
+                  });
+                } else {
+                  document.write('<input type="checkbox">');
+                }
+                </script>
+
+                <script>
+                $(function () {
+                  $('#highlight_todo').checkbox('setting', 'onChange', function () {
+                    let checked = $('#highlight_todo').checkbox('is checked');
+                    localStorage.setItem('highlight_todo', checked ? '1' : '0');
+                    if (checked) {
+                      $('.table_problems').addClass('highlight_todo');
+                    } else {
+                      $('.table_problems').removeClass('highlight_todo');
+                    }
+                  });
                 });
-              });
-              </script>
-              <label>高亮任务计划</label>
+                </script>
+                <label>高亮任务计划</label>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div style="display: inline-block; ">
-          <% if (allowedManageTag) { %>
-            <% if (typeof tags !== 'undefined' && tags.length === 1 && tags[0].length === 1) { %>
-              <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problems', 'tag', tags[0][0].id, 'edit']) %>" class="ui labeled icon mini blue button"><i class="write icon"></i> 编辑标签</a>
+          
+          <div style="display: inline-block; ">
+            <% if (allowedManageTag) { %>
+              <% if (typeof tags !== 'undefined' && tags.length === 1 && tags[0].length === 1) { %>
+                <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problems', 'tag', tags[0][0].id, 'edit']) %>" class="ui labeled icon mini blue button"><i class="write icon"></i> 编辑标签</a>
+              <% } %>
+              <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problems', 'tag', 0, 'edit']) %>" class="ui labeled icon mini green button"><i class="plus icon"></i> 添加标签</a>
             <% } %>
-            <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problems', 'tag', 0, 'edit']) %>" class="ui labeled icon mini green button"><i class="plus icon"></i> 添加标签</a>
-          <% } %>
-          <% if (showTagFilter) { %>
-            <div id="tag_search_dropdown" class="ui labeled icon mini teal dropdown button" style="margin-left: 10px;">
-              <i class="tag icon"></i>
-              <span class="text">标签筛选</span>
-              <div class="menu" style="width: 20em;">
-                <div class="ui icon search input">
-                  <i class="search icon"></i>
-                  <input type="text" placeholder="搜索标签" style="font-size: .9rem;">
+            <% if (showTagFilter) { %>
+              <div id="tag_search_dropdown" class="ui labeled icon mini teal dropdown button" style="margin-left: 10px;">
+                <i class="tag icon"></i>
+                <span class="text">标签筛选</span>
+                <div class="menu" style="width: 20em;">
+                  <div class="ui icon search input">
+                    <i class="search icon"></i>
+                    <input type="text" placeholder="搜索标签" style="font-size: .9rem;">
+                  </div>
+                  <div class="scrolling menu" title="点击：切换是否选中这个标签，Shift + 点击：只选中这个标签 / 取消选中这个标签"></div>
                 </div>
-                <div class="scrolling menu" title="点击：切换是否选中这个标签，Shift + 点击：只选中这个标签 / 取消选中这个标签"></div>
               </div>
-            </div>
-          <% } %>
-          <div style="margin-left: 10px; " class="ui mini buttons">
-            <div class="ui labeled icon mini dropdown button" id="add_problem_dropdown"><i class="plus icon"></i> 添加题目
-            <div class="menu">
-              <a class="item" href="<%= syzoj.utils.makeUrl(['problem', 0, 'edit']) %>"><i class="file icon"></i> 新建题目</a>
-              <a class="item" href="<%= syzoj.utils.makeUrl(['problem', 0, 'import']) %>"><i class="cloud download icon"></i> 导入题目</a>
-            </div>
+            <% } %>
+            <div style="margin-left: 10px; " class="ui mini buttons">
+              <div class="ui labeled icon mini dropdown button" id="add_problem_dropdown"><i class="plus icon"></i> 添加题目
+              <div class="menu">
+                <a class="item" href="<%= syzoj.utils.makeUrl(['problem', 0, 'edit']) %>"><i class="file icon"></i> 新建题目</a>
+                <a class="item" href="<%= syzoj.utils.makeUrl(['problem', 0, 'import']) %>"><i class="cloud download icon"></i> 导入题目</a>
+              </div>
+              </div>
             </div>
           </div>
         </div>
@@ -119,6 +123,27 @@
   </div>
   
   <style>
+    .top_toolbar > .left_bar {
+      float: left;
+      margin-top: 5px;
+    }
+    .top_toolbar > .right_bar {
+      float: right;
+      white-space: nowrap;
+    }
+    .top_toolbar > .left_bar > form {
+      margin-top: 4px;
+    }
+    .top_toolbar > .left_bar > .tag_group {
+      display: inline-block;
+      margin-top: 6px;
+    }
+    .top_toolbar > .left_bar > .tag_group:not(:last-child) {
+      margin-right: 1em;
+    }
+    .top_toolbar > .right_bar {
+      margin-top: 10px;
+    }
     .show_tag_controled {
       overflow: hidden;
       float: right;
