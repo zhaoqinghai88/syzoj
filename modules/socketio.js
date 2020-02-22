@@ -43,6 +43,7 @@ function processOverallResult(source, config) {
                         userOutput: config.showTestdata ? cs.result.userOutput : undefined,
                         userError: config.showTestdata ? cs.result.userError : undefined,
                         spjMessage: config.showTestdata ? cs.result.spjMessage : undefined,
+                        diagnostics: config.showTestdata ? cs.result.diagnostics : undefined,
                     }
                 }))
             }))
