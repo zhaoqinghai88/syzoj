@@ -313,6 +313,7 @@ app.post('/api/markdown', async (req, res) => {
 });
 
 app.get('/static/uploads/answer/:md5', async (req, res) => {
+  if (req.params.md5.indexOf('/') !== -1) return res.status(500).send('Not Found');
   try {
     let md5 = req.params.md5;
     if (typeof md5 !== 'string' || !/^[0-9a-fA-F]+$/.test(md5)) throw new ErrorMessage("你确定这是个 md5?");

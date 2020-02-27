@@ -84,9 +84,12 @@
         <h4 class="ui top attached block header"><i class="ui quote left icon"></i><%= syzoj.config.custom_hitokoto.title %></h4>
         <div class="ui bottom attached center aligned segment">
           <div class="ui active centered inline loader" id="hitokoto-loader"></div>
+          <%
+            let showCustomHitokoto = user && syzoj.config.custom_hitokoto.enabled;
+            let hitokotoUrl = showCustomHitokoto ? "/api/hitokoto" : "https://v1.hitokoto.cn/?c=a";
+          %>
           <script>
-          <% let showCustomHitokoto = user && syzoj.config.custom_hitokoto.enabled; %>
-          $.get(<%- JSON.stringify(showCustomHitokoto ? "/api/hitokoto" : "https://sslapi.hitokoto.cn/?c=a") %>, function (data) {
+          $.get(<%- JSON.stringify(hitokotoUrl) %>, function (data) {
             if (typeof data === 'string') data = JSON.parse(data);
             if (data.error) {
               console.log(data.error);

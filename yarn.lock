@@ -2765,7 +2765,7 @@ random-bytes@~1.0.0:
   resolved "https://registry.npm.taobao.org/random-bytes/download/random-bytes-1.0.0.tgz#4f68a1dc0ae58bd3fb95848c30324db75d64360b"
   integrity sha1-T2ih3Arli9P7lYSMMDJNt11kNgs=
 
-random-js@^1.0.8:
+random-js@1.0.8:
   version "1.0.8"
   resolved "https://registry.npm.taobao.org/random-js/download/random-js-1.0.8.tgz#968fd689a6f25d6c0aac766283de2f688c9c190a"
   integrity sha1-lo/WiabyXWwKrHZig94vaIycGQo=
@@ -3329,14 +3329,6 @@ symbol-tree@^3.2.2:
   version "3.2.4"
   resolved "https://registry.npm.taobao.org/symbol-tree/download/symbol-tree-3.2.4.tgz#430637d248ba77e078883951fb9aa0eed7c63fa2"
   integrity sha1-QwY30ki6d+B4iDlR+5qg7tfGP6I=
-
-syzoj-divine@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.npm.taobao.org/syzoj-divine/download/syzoj-divine-1.0.2.tgz#e8053e2b5b19915b55d4b9198c923bfc187778bc"
-  integrity sha1-6AU+K1sZkVtV1LkZjJI7/Bh3eLw=
-  dependencies:
-    buffer-crc32 "^0.2.13"
-    random-js "^1.0.8"
 
 syzoj-renderer@^1.0.5:
   version "1.0.5"
