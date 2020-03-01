@@ -149,7 +149,6 @@
   let sampleParser = {
     reHeaderMarkdown: [/^__(.+)__$/, /^#{1,6}(.+)$/, /^\*\*(.+)\*\*$/],
     parseHeader(str) {
-      if (str.length > 16) return null;
       for (let re of this.reHeaderMarkdown) {
         let tmp = str.match(re);
         if (tmp) {
