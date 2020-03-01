@@ -152,7 +152,8 @@
       for (let re of this.reHeaderMarkdown) {
         let tmp = str.match(re);
         if (tmp) {
-          let headerName = tmp[1];
+          let headerName = tmp[1].trim();
+          if (!headerName.startsWith('样例') || headerName.length > 10) return null;
           let types = [];
           for (let [type, text] of [['input', '输入'], ['output', '输出'], ['comment', '解释']]) {
             if (headerName.includes(text)) types.push(type);
@@ -185,11 +186,13 @@
         while (content.length && !content[0].trim()) content.shift();
         while (content.length && !content[content.length - 1].trim()) content.pop();
         if (['input', 'output'].includes(header.type)) {
-          if (content.length && content[0].trim().startsWith('```') && content[content.length - 1].trim() == '```') {
+          if (content.length > 1 && content[0].trim().startsWith('```') && content[content.length - 1].trim() == '```') {
             content = content.slice(1, -1);
+          } else {
+            throw new Error('sample malformed');
           }
         }
-        sample[header.type] = content.join('\n');
+        sample[header.type] = content.join('\n') + '\n';
         header = null;
         content = null;
       }
@@ -284,16 +287,19 @@
         }
       },
       confirm() {
+        const reEndNewline = /\n\s*$/;
         let result = [];
         if (this.originalContent) result.push(this.originalContent);
         let index = 0;
         for (let sample of this.samples) {
           ++index;
           let indexStr = this.samples.length == 1 ? '' : ' ' + index;
+          if (!reEndNewline.test(sample.input)) sample.input += '\n';
+          if (!reEndNewline.test(sample.output)) sample.output += '\n';
           result.push(`__样例输入${indexStr}__`);
-          result.push('```plain\n' + sample.input.trim() + '\n```');
+          result.push('```plain\n' + sample.input + '```');
           result.push(`__样例输出${indexStr}__`);
-          result.push('```plain\n' + sample.output.trim() + '\n```');
+          result.push('```plain\n' + sample.output + '```');
           if (sample.comment.trim()) {
             result.push(`__样例解释${indexStr}__`);
             result.push(sample.comment.trim());
