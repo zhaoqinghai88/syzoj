@@ -219,8 +219,9 @@
             throw new Error('sample malformed');
           }
         }
-        if (content.length > 0) content.push('');
-        sample[header.type] = content.join('\n');
+        let str = content.join('\n');
+        if (str.trim()) str += '\n';
+        sample[header.type] = str;
         header = null;
         content = null;
       }
