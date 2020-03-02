@@ -219,7 +219,8 @@
             throw new Error('sample malformed');
           }
         }
-        sample[header.type] = content.join('\n') + '\n';
+        if (content.length > 0) content.push('');
+        sample[header.type] = content.join('\n');
         header = null;
         content = null;
       }
