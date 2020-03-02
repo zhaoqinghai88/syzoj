@@ -246,6 +246,7 @@
         if (str || unused.length) unused.push(raw);
       }
       saveSection();
+      while (unused.length && !unused[unused.length - 1]) unused.pop();
       return {
         samples: samples.filter(a => a),
         extra: unused.join('\n')
