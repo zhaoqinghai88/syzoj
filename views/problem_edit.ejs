@@ -78,71 +78,90 @@
       <div ref="modal" class="ui large modal">
         <div class="header">编辑样例 - {{ modalSubtitle }}</span>
         </div>
-        <div class="content">
-          <div v-show="!showPreview" class="ui form">
-            <div class="ui two fields">
+        <div class="ui form content">
+          <div v-show="!showPreview">
+            <template v-if="currentSample.type == 'brief'">
               <div class="ui field">
-                <label>样例输入</label>
-                <textarea class="markdown-edit" v-model="currentSample.input" :rows="dataBoxSize"></textarea>
+                <label>样例内容</label>
+                <textarea class="markdown-edit" v-model="currentSample.content" rows="16"></textarea>
+              </div>
+            </template>
+            <template v-if="currentSample.type == 'default'">
+              <div class="ui two fields">
+                <div class="ui field">
+                  <label>样例输入</label>
+                  <textarea class="markdown-edit" v-model="currentSample.input" :rows="dataBoxSize"></textarea>
+                </div>
+                <div class="ui field">
+                  <label>样例输出</label>
+                  <textarea class="markdown-edit" v-model="currentSample.output" :rows="dataBoxSize"></textarea>
+                </div>
               </div>
               <div class="ui field">
-                <label>样例输出</label>
-                <textarea class="markdown-edit" v-model="currentSample.output" :rows="dataBoxSize"></textarea>
+                <label>
+                  样例解释
+                  <a href="javascript:;" tabindex="-1" style="margin-left: .25em; outline: none;" @click="toggleCommentBox">
+                    {{ showCommentBox ? '隐藏' : '显示' }}
+                  </a>
+                  <a href="javascript:;" tabindex="-1" style="margin-left: .25em; outline: none;" @click="toggleCommentPreview" v-show="showCommentBox">
+                    {{ showCommentPreview ? '返回' : '预览' }}
+                  </a>
+                </label>
+                <textarea class="markdown-edit" rows="7" v-model="currentSample.comment" v-show="showCommentBox && !showCommentPreview"></textarea>
+                <div
+                  class="ui segment font-content"
+                  v-if="showCommentBox && showCommentPreview"
+                  v-html="commentPreview"
+                  style="min-height: 10em; max-height: 20em; overflow-y: auto;"></div>
               </div>
-            </div>
-            <div class="ui field">
-              <label>
-                样例解释
-                <a href="javascript:;" style="margin-left: .25em;" @click="toggleCommentBox">
-                  {{ showCommentBox ? '隐藏' : '显示' }}
-                </a>
-                <a href="javascript:;" style="margin-left: .25em;" @click="toggleCommentPreview" v-show="showCommentBox">
-                  {{ showCommentPreview ? '返回' : '预览' }}
-                </a>
-              </label>
-              <textarea class="markdown-edit" rows="7" v-model="currentSample.comment" v-show="showCommentBox && !showCommentPreview"></textarea>
-              <div
-                class="ui segment font-content"
-                v-if="showCommentBox && showCommentPreview"
-                v-html="commentPreview"
-                style="min-height: 10em; max-height: 20em; overflow-y: auto;"></div>
-            </div>
+            </template>
           </div>
           <div v-if="previewMode == 'html'" v-html="previewHTML" style="height: 32em; overflow-y: auto;"></div>
-          <div v-if="previewMode == 'markdown'" class="ui form">
-            <div class="ui field">
-              <textarea class="markdown-edit" rows="24" v-model="previewMarkdown" readonly></textarea>
-            </div>
+          <div v-if="previewMode == 'markdown'" class="ui field">
+            <textarea class="markdown-edit" rows="24" v-model="previewMarkdown" readonly></textarea>
           </div>
         </div>
         <div class="actions">
           <div style="margin-left: .5em; float: left;">
             <div v-show="!showPreview">
               <div class="ui blue buttons">
-                <a class="ui icon button" @click="navigate(-1)">
+                <a class="ui icon button" :title="isFirst ? '在最前添加' : '上一个'" @click="navigate(-1)">
                   <i class="chevron left icon"></i>
                 </a>
                 <a class="ui icon button">
                   {{ userSampleIndex }} / {{ samples.length }}
                 </a>
-                <a class="ui icon button" @click="navigate(+1)">
+                <a class="ui icon button" :title="isLast ? '在最后添加' : '下一个'" @click="navigate(+1)">
                   <i class="chevron right icon"></i>
                 </a>
               </div>
-              <div style="display: inline-block; margin-left: 1.25em;">
-                <a class="ui icon green button" @click="addSample(currentSampleIndex + 1)">
+              <div style="display: inline-block; margin-left: 1em;">
+                <div class="ui teal buttons" style="margin-left: 1em;">
+                  <a class="ui icon button" :class="{ disabled: isFirst }" title="前移" @click="moveSample(-1)">
+                    <i class="angle double left icon"></i>
+                  </a>
+                  <a class="ui icon button" :class="{ disabled: isLast }" title="后移" @click="moveSample(+1)">
+                    <i class="angle double right icon"></i>
+                  </a>
+                </div>
+              </div>
+              <div style="display: inline-block; margin-left: 1em;">
+                <a class="ui icon green button" title="添加" @click="addSample(currentSampleIndex + 1)">
                   <i class="plus icon"></i>
                 </a>
-                <a class="ui icon red button" :class="{ disabled: !canRemove }" @click="removeSample(currentSampleIndex)">
+                <a class="ui icon red button" title="删除" :class="{ disabled: !canRemove }" @click="removeSample(currentSampleIndex)">
                   <i class="remove icon"></i>
                 </a>
               </div>
-              <div style="display: inline-block; margin-left: 1.25em;">
-                <a class="ui icon circular button" :class="{ disabled: !canUndo }" @click="undo">
+              <div style="display: inline-block; margin-left: 1em;">
+                <a class="ui icon circular button" :class="{ disabled: !canUndo }" :title="undoComment" @click="undo">
                   <i class="undo icon"></i>
                 </a>
+                <a class="ui icon circular button" title="切换样例类型" @click="toggleSampleType">
+                  <i class="exchange icon"></i>
+                </a>
               </div>
-              <div style="display: inline-block; margin-left: 1.25em;">
+              <div style="display: inline-block; margin-left: 1em;">
                 <span v-if="numberEmptySamples">空样例：{{ numberEmptySamples }} 个</span>
               </div>
             </div>
@@ -180,6 +199,10 @@
 
   let sampleParser = {
     reHeaderMarkdown: [/^__(.+)__$/, /^#{1,6}(.+)$/, /^\*\*(.+)\*\*$/],
+    sampleTypeKeys: {
+      'brief': ['content'],
+      'default': ['input', 'output', 'comment']
+    },
     parseHeader(str) {
       for (let re of this.reHeaderMarkdown) {
         let tmp = str.match(re);
@@ -190,8 +213,8 @@
           for (let [type, text] of [['input', '输入'], ['output', '输出'], ['comment', '解释']]) {
             if (headerName.includes(text)) types.push(type);
           }
-          if (types.length == 0) throw new Error("unknown header");
           if (types.length > 1) throw new Error("multiple types");
+          if (types.length == 0) types.push('content');
           let indexes = headerName.match(/\d+/g) || [0];
           if (indexes.length > 1) throw new Error("multiple indexes");
           return {
@@ -202,19 +225,39 @@
       }
       return null;
     },
+    checkSample(sample) {
+      let sampleType = null;
+      for (let type in this.sampleTypeKeys) {
+        for (let key of this.sampleTypeKeys[type]) {
+          if (key in sample) {
+            if (sampleType) throw new Error('multiple types of sample');
+            sampleType = type;
+            break;
+          }
+        }
+      }
+      if (!sampleType) throw new Error('unknown sample type');
+      sample.type = sampleType;
+      for (let key of this.sampleTypeKeys[sampleType]) {
+        if (!(key in sample)) sample[key] = '';
+      }
+    },
+    createSample(type) {
+      let sample = { type: type };
+      for (let key of this.sampleTypeKeys[type]) {
+        sample[key] = '';
+      }
+      return sample;
+    },
     parseSamples(source) {
       let samples = [], header = null, content = null, unused = [];
       function saveSection() {
         if (!header) return;
         if (!samples[header.index]) {
-          samples[header.index] = {
-            input: '',
-            output: '',
-            comment: ''
-          };
+          samples[header.index] = {};
         }
         let sample = samples[header.index];
-        if (sample[header.type]) throw new Error('duplicate section');
+        if (header.type in sample) throw new Error('duplicate section');
         while (content.length && !content[0].trim()) content.shift();
         while (content.length && !content[content.length - 1].trim()) content.pop();
         if (['input', 'output'].includes(header.type)) {
@@ -246,9 +289,11 @@
         if (str || unused.length) unused.push(raw);
       }
       saveSection();
+      samples = samples.filter(a => a);
+      samples.forEach(sample => this.checkSample(sample));
       while (unused.length && !unused[unused.length - 1]) unused.pop();
       return {
-        samples: samples.filter(a => a),
+        samples: samples,
         extra: unused.join('\n')
       };
     }
@@ -283,17 +328,19 @@
           return '样例 ' + this.userSampleIndex;
         }
       },
+      undoComment() {
+        if (!this.history.length) return '无法撤销';
+        return '撤销 ' + this.history[this.history.length - 1].comment;
+      },
       currentSample() {
-        if (this.currentSampleIndex == -1) return {};
+        if (this.currentSampleIndex == -1) return { type: 'none' };
         return this.samples[this.currentSampleIndex];
       },
       userSampleIndex() {
         return this.currentSampleIndex + 1;
       },
       numberEmptySamples() {
-        return this.samples.filter(
-          sample => !sample.input && !sample.output && !sample.comment.trim()
-        ).length;
+        return this.samples.filter(this.isSampleEmpty).length;
       },
       dataBoxSize() {
         if (this.showCommentBox) return this.showCommentPreview ? 6 : 12;
@@ -304,9 +351,7 @@
       },
       canRemove() {
         return this.samples.length > 1 || this.numberEmptySamples == 0;
-      }
-    },
-    methods: {
+      },
       isFirst() {
         return this.currentSampleIndex == 0;
       },
@@ -315,6 +360,18 @@
       },
       isAny() {
         return this.samples.length > 0;
+      }
+    },
+    methods: {
+      isSampleEmpty(sample) {
+        switch (sample.type) {
+          case 'brief':
+            return !sample.content.trim();
+          case 'default':
+            return !sample.input && !sample.output && !sample.comment.trim();
+          default:
+            return true;
+        }
       },
       fromHistory(o) {
         this.currentSampleIndex = -1;
@@ -327,35 +384,49 @@
           currentSampleIndex: this.currentSampleIndex
         };
       },
-      addHistory() {
-        this.history.push(this.toHistory());
+      addHistory(comment) {
+        this.history.push({
+          state: this.toHistory(),
+          comment: comment
+        });
       },
       undo() {
         if (this.canUndo) {
-          this.fromHistory(this.history.pop());
+          this.fromHistory(this.history.pop().state);
         }
       },
-      addSample(index) {
-        if (this.samples.length) this.addHistory();
-        this.samples.splice(index, 0, {
-          input: '',
-          output: '',
-          comment: ''
-        });
+      addSample(index, type = 'default') {
+        if (this.samples.length) this.addHistory('添加样例');
+        let sample = sampleParser.createSample(type);
+        this.samples.splice(index, 0, sample);
         this.currentSampleIndex = index;
       },
       removeSample(index) {
         if (!this.canRemove) return;
-        this.addHistory();
+        this.addHistory('删除样例');
         this.currentSampleIndex = -1;
         this.samples.splice(index, 1);
-        if (!this.isAny()) this.addSample(0);
+        if (!this.isAny) this.addSample(0);
         this.currentSampleIndex = Math.min(this.samples.length - 1, index);
       },
+      moveSample(delta) {
+        if ((delta < 0 && this.isFirst) || (delta > 0 && this.isLast)) return;
+        this.addHistory(delta < 0 ? '前移' : '后移');
+        let sourceIndex = this.currentSampleIndex;
+        let targetIndex = sourceIndex + delta;
+        this.samples.splice(sourceIndex, 1, this.samples.splice(targetIndex, 1, this.currentSample)[0]);
+        this.currentSampleIndex = targetIndex;
+      },
+      toggleSampleType() {
+        this.addHistory('切换样例类型');
+        let oldType = this.currentSample.type;
+        let newType = oldType == 'default' ? 'brief' : 'default';
+        this.samples.splice(this.currentSampleIndex, 1, sampleParser.createSample(newType));
+      },
       navigate(delta) {
-        if (delta < 0 && this.isFirst()) {
+        if (delta < 0 && this.isFirst) {
           this.addSample(0);
-        } else if (delta > 0 && this.isLast()) {
+        } else if (delta > 0 && this.isLast) {
           this.addSample(this.samples.length);
         } else {
           this.currentSampleIndex += delta;
@@ -369,13 +440,21 @@
         for (let sample of this.samples) {
           ++index;
           let indexStr = this.samples.length == 1 ? '' : ' ' + index;
-          result.push(`__样例输入${indexStr}__`);
-          result.push('```plain\n' + ensureEndNewline(sample.input) + '```');
-          result.push(`__样例输出${indexStr}__`);
-          result.push('```plain\n' + ensureEndNewline(sample.output) + '```');
-          if (sample.comment.trim()) {
-            result.push(`__样例解释${indexStr}__`);
-            result.push(sample.comment.trim());
+          switch (sample.type) {
+            case 'brief':
+              result.push(`__样例${indexStr}__`);
+              result.push(sample.content.trim());
+              break;
+            case 'default':
+              result.push(`__样例输入${indexStr}__`);
+              result.push('```plain\n' + ensureEndNewline(sample.input) + '```');
+              result.push(`__样例输出${indexStr}__`);
+              result.push('```plain\n' + ensureEndNewline(sample.output) + '```');
+              if (sample.comment.trim()) {
+                result.push(`__样例解释${indexStr}__`);
+                result.push(sample.comment.trim());
+              }
+              break;
           }
         }
         return result.join('\n\n') + '\n';
@@ -417,7 +496,7 @@
         this.refreshModal();
       },
       updateCommentPreview() {
-        if (!this.showCommentBox || !this.showCommentPreview) return;
+        if (!this.showCommentBox || !this.showCommentPreview || this.currentSample.type != 'default') return;
         this.commentPreview = '加载中...';
         $.post('/api/markdown', { s: this.currentSample.comment }, (s) => {
           this.commentPreview = s;
