@@ -76,11 +76,10 @@
 
     <div id="vue-sample-quickedit">
       <div ref="modal" class="ui large modal">
-        <div class="header">
-          编辑样例 - 样例 {{ userSampleIndex }}
+        <div class="header">编辑样例 - {{ modalSubtitle }}</span>
         </div>
         <div class="content">
-          <div class="ui form">
+          <div v-show="!showPreview" class="ui form">
             <div class="ui two fields">
               <div class="ui field">
                 <label>样例输入</label>
@@ -109,32 +108,56 @@
                 style="min-height: 10em; max-height: 20em; overflow-y: auto;"></div>
             </div>
           </div>
+          <div v-if="previewMode == 'html'" v-html="previewHTML" style="height: 32em; overflow-y: auto;"></div>
+          <div v-if="previewMode == 'markdown'" class="ui form">
+            <div class="ui field">
+              <textarea class="markdown-edit" rows="24" v-model="previewMarkdown" readonly></textarea>
+            </div>
+          </div>
         </div>
         <div class="actions">
           <div style="margin-left: .5em; float: left;">
-            <div class="ui blue buttons">
-              <a class="ui icon button" @click="navigate(-1)">
-                <i class="chevron left icon"></i>
-              </a>
-              <a class="ui icon button">
-                {{ userSampleIndex }} / {{ samples.length }}
-              </a>
-              <a class="ui icon button" @click="navigate(+1)">
-                <i class="chevron right icon"></i>
-              </a>
+            <div v-show="!showPreview">
+              <div class="ui blue buttons">
+                <a class="ui icon button" @click="navigate(-1)">
+                  <i class="chevron left icon"></i>
+                </a>
+                <a class="ui icon button">
+                  {{ userSampleIndex }} / {{ samples.length }}
+                </a>
+                <a class="ui icon button" @click="navigate(+1)">
+                  <i class="chevron right icon"></i>
+                </a>
+              </div>
+              <div style="display: inline-block; margin-left: 1.25em;">
+                <a class="ui icon green button" @click="addSample(currentSampleIndex + 1)">
+                  <i class="plus icon"></i>
+                </a>
+                <a class="ui icon red button" :class="{ disabled: !canRemove }" @click="removeSample(currentSampleIndex)">
+                  <i class="remove icon"></i>
+                </a>
+              </div>
+              <div style="display: inline-block; margin-left: 1.25em;">
+                <a class="ui icon circular button" :class="{ disabled: !canUndo }" @click="undo">
+                  <i class="undo icon"></i>
+                </a>
+              </div>
+              <div style="display: inline-block; margin-left: 1.25em;">
+                <span v-if="numberEmptySamples">空样例：{{ numberEmptySamples }} 个</span>
+              </div>
             </div>
-            <div style="display: inline-block; margin-left: 1.25em;">
-              <a class="ui icon green button" @click="addSample(currentSampleIndex + 1)">
-                <i class="plus icon"></i>
+            <div v-show="showPreview">
+              <a class="ui button" @click="togglePreviewMode">
+                <template v-if="previewMode == 'html'">
+                  <i class="code icon"></i> Markdown
+                </template>
+                <template v-if="previewMode == 'markdown'">
+                  <i class="eye icon"></i> HTML
+                </template>
               </a>
-              <a class="ui icon red button" @click="removeSample(currentSampleIndex)">
-                <i class="remove icon"></i>
-              </a>
-            </div>
-            <div style="display: inline-block; margin-left: 1.25em;">
-              <span v-if="numberEmptySamples">空样例：{{ numberEmptySamples }} 个</span>
             </div>
           </div>
+          <a class="ui button" @click="togglePreview">{{ showPreview ? "返回" : "预览" }}</a>
           <a class="ui negative button">取消</a>
           <a class="ui positive button" @click="confirm">确定</a>
         </div>
@@ -146,6 +169,10 @@
 
 <script type="text/javascript">
 
+  function copyObject(o) {
+    return JSON.parse(JSON.stringify(o));
+  }
+
   let sampleParser = {
     reHeaderMarkdown: [/^__(.+)__$/, /^#{1,6}(.+)$/, /^\*\*(.+)\*\*$/],
     parseHeader(str) {
@@ -153,7 +180,7 @@
         let tmp = str.match(re);
         if (tmp) {
           let headerName = tmp[1].trim();
-          if (!headerName.startsWith('样例') || headerName.length > 10) return null;
+          if (!headerName.startsWith('样例') || headerName.length > 10 || /，。/.test(headerName)) return null;
           let types = [];
           for (let [type, text] of [['input', '输入'], ['output', '输出'], ['comment', '解释']]) {
             if (headerName.includes(text)) types.push(type);
@@ -228,7 +255,12 @@
       currentSampleIndex: -1,
       showCommentBox: true,
       showCommentPreview: false,
-      commentPreview: ''
+      commentPreview: '',
+      showPreview: false,
+      previewMode: 'none',
+      previewHTML: '',
+      previewMarkdown: '',
+      history: []
     },
     watch: {
       currentSample() {
@@ -236,6 +268,13 @@
       }
     },
     computed: {
+      modalSubtitle() {
+        if (this.showPreview) {
+          return '预览';
+        } else {
+          return '样例' + this.userSampleIndex;
+        }
+      },
       currentSample() {
         if (this.currentSampleIndex == -1) return {};
         return this.samples[this.currentSampleIndex];
@@ -245,12 +284,18 @@
       },
       numberEmptySamples() {
         return this.samples.filter(
-          sample => !sample.input.trim() && !sample.output.trim() && !sample.comment.trim()
+          sample => !sample.input && !sample.output && !sample.comment.trim()
         ).length;
       },
       dataBoxSize() {
         if (this.showCommentBox) return this.showCommentPreview ? 6 : 12;
         return 18;
+      },
+      canUndo() {
+        return this.history.length > 0;
+      },
+      canRemove() {
+        return this.samples.length > 1 || this.numberEmptySamples == 0;
       }
     },
     methods: {
@@ -263,7 +308,27 @@
       isAny() {
         return this.samples.length > 0;
       },
+      fromHistory(o) {
+        this.currentSampleIndex = -1;
+        this.samples = o.samples;
+        this.currentSampleIndex = o.currentSampleIndex;
+      },
+      toHistory() {
+        return {
+          samples: copyObject(this.samples),
+          currentSampleIndex: this.currentSampleIndex
+        };
+      },
+      addHistory() {
+        this.history.push(this.toHistory());
+      },
+      undo() {
+        if (this.canUndo) {
+          this.fromHistory(this.history.pop());
+        }
+      },
       addSample(index) {
+        if (this.samples.length) this.addHistory();
         this.samples.splice(index, 0, {
           input: '',
           output: '',
@@ -272,6 +337,8 @@
         this.currentSampleIndex = index;
       },
       removeSample(index) {
+        if (!this.canRemove) return;
+        this.addHistory();
         this.currentSampleIndex = -1;
         this.samples.splice(index, 1);
         if (!this.isAny()) this.addSample(0);
@@ -286,8 +353,8 @@
           this.currentSampleIndex += delta;
         }
       },
-      confirm() {
-        const reEndNewline = /\n\s*$/;
+      export() {
+        const reEndNewline = /\n$/;
         let result = [];
         if (this.originalContent) result.push(this.originalContent);
         let index = 0;
@@ -305,7 +372,10 @@
             result.push(sample.comment.trim());
           }
         }
-        this.rawEditor.val(result.join('\n\n') + '\n');
+        return result.join('\n\n') + '\n';
+      },
+      confirm() {
+        this.rawEditor.val(this.export());
       },
       showModal() {
         let text = this.rawEditor.val();
@@ -322,6 +392,8 @@
           this.samples = [];
           this.addSample(0);
         }
+        this.showPreview = false;
+        this.previewMode = 'none';
         this.showCommentBox = true;
         this.showCommentPreview = false;
         $(this.$refs.modal).modal('setting', 'closable', false).modal('show');
@@ -348,6 +420,26 @@
         this.showCommentPreview = !this.showCommentPreview;
         this.updateCommentPreview();
         this.refreshModal();
+      },
+      togglePreview() {
+        this.showPreview = !this.showPreview;
+        if (this.showPreview) {
+          this.previewMode = 'html';
+          this.previewMarkdown = this.export();
+          this.previewHTML = '加载中...';
+          $.post('/api/markdown', { s: this.previewMarkdown }, (s) => {
+            this.previewHTML = s;
+            this.refreshModal();
+          });
+        } else {
+          this.previewMode = 'none';
+        }
+      },
+      togglePreviewMode() {
+        if (this.showPreview) {
+          this.previewMode = this.previewMode == 'html' ? 'markdown' : 'html';
+          this.refreshModal();
+        }
       }
     }
   });
