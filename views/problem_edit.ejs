@@ -400,6 +400,7 @@
         this.showCommentBox = true;
         this.showCommentPreview = false;
         $(this.$refs.modal).modal('setting', 'closable', false).modal('show');
+        this.refreshModal();
       },
       refreshModal() {
         setTimeout(() => {
