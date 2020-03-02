@@ -173,6 +173,11 @@
     return JSON.parse(JSON.stringify(o));
   }
 
+  function ensureEndNewline(str) {
+    if (str.endsWith('\n')) return str;
+    return str + '\n';
+  }
+
   let sampleParser = {
     reHeaderMarkdown: [/^__(.+)__$/, /^#{1,6}(.+)$/, /^\*\*(.+)\*\*$/],
     parseHeader(str) {
@@ -363,12 +368,10 @@
         for (let sample of this.samples) {
           ++index;
           let indexStr = this.samples.length == 1 ? '' : ' ' + index;
-          if (!reEndNewline.test(sample.input)) sample.input += '\n';
-          if (!reEndNewline.test(sample.output)) sample.output += '\n';
           result.push(`__样例输入${indexStr}__`);
-          result.push('```plain\n' + sample.input + '```');
+          result.push('```plain\n' + ensureEndNewline(sample.input) + '```');
           result.push(`__样例输出${indexStr}__`);
-          result.push('```plain\n' + sample.output + '```');
+          result.push('```plain\n' + ensureEndNewline(sample.output) + '```');
           if (sample.comment.trim()) {
             result.push(`__样例解释${indexStr}__`);
             result.push(sample.comment.trim());
