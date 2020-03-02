@@ -180,7 +180,7 @@
         let tmp = str.match(re);
         if (tmp) {
           let headerName = tmp[1].trim();
-          if (!headerName.startsWith('样例') || headerName.length > 10 || /，。/.test(headerName)) return null;
+          if (!headerName.includes('样例') || headerName.length > 10 || /，。/.test(headerName)) return null;
           let types = [];
           for (let [type, text] of [['input', '输入'], ['output', '输出'], ['comment', '解释']]) {
             if (headerName.includes(text)) types.push(type);
