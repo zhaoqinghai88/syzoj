@@ -1,23 +1,59 @@
 <% this.adminPage = 'quote_image'; %>
 <% include admin_header %>
 
+<style>
+  #vueApp > .topbar > .ui.button:not(:first-child) {
+    margin-left: 1em;
+  }
+</style>
+
 <div id="vueApp">
-  <div>
+  <div class="topbar">
     <a class="ui small green button" @click="uploadHandler">
       <i class="plus icon"></i> 上传图片
     </a>
-    <a class="ui small blue button" style="margin-left: 1em;" @click="reloadList">
+    <a class="ui small blue button" @click="reloadList">
       <i class="redo icon"></i> 刷新列表
     </a>
-    <a class="ui small teal button" style="margin-left: 1em;" @click="reloadAll">
+    <a class="ui small teal button" @click="reloadAll">
       <i class="sync icon"></i> 重新加载
     </a>
-    <a class="ui small violet button" style="margin-left: 1em;" @click="showStatistics">
+    <a class="ui small violet button" @click="showStatistics">
       <i class="info icon"></i> 统计信息
+    </a>
+    <a class="ui small purple dropdown button" ref="btn_sort" v-once>
+      <i class="sort icon"></i> 排序方式
+      <div class="ui menu">
+        <div class="item active" data-value="by.from">
+          <i class="at icon"></i>
+          来源
+        </div>
+        <div class="item" data-value="by.time">
+          <i class="clock outline icon"></i>
+          时间
+        </div>
+        <div class="item" data-value="by.filename">
+          <i class="file outline icon"></i>
+          名称
+        </div>
+        <div class="item" data-value="by.size">
+          <i class="hashtag icon"></i>
+          大小
+        </div>
+        <div class="divider"></div>
+        <div class="item active" data-value="order.asc">
+          <i class="sort amount up icon"></i>
+          升序
+        </div>
+        <div class="item" data-value="order.desc">
+          <i class="sort amount down icon"></i>
+          降序
+        </div>
+      </div>
     </a>
   </div>
   <div class="ui divided items">
-    <div class="ui item" v-for="quote of quotes">
+    <div class="ui item" v-for="quote of sortedQuotes">
       <div class="image">
         <img :src="quote.url">
       </div>
@@ -40,7 +76,7 @@
   </div>
   <div id="modal-stat" class="ui modal">
     <div class="header">统计信息</div>
-    <div class="content">
+    <div class="scrolling content">
       <table v-if="stat" class="ui center aligned celled table">
         <thead>
           <tr>
@@ -107,7 +143,43 @@ let app = new Vue({
   data: {
     loading: false,
     quotes: <%- JSON.stringify(quotes) %>,
-    stat: null
+    stat: null,
+    sortOptions: {
+      by: 'from',
+      order: 'asc'
+    }
+  },
+  computed: {
+    sortedQuotes() {
+      let result = this.quotes.slice(0);
+      result.sort(
+        ({ [this.sortOptions.by]: a }, { [this.sortOptions.by]: b }) => (a > b) - (a < b)
+      );
+      if (this.sortOptions.order == 'desc') result.reverse();
+      return result;
+    }
+  },
+  created() {
+    $(() => {
+      let $btnSort = $(this.$refs.btn_sort);
+      $btnSort.dropdown({
+        maxSelections: 2,
+        selectOnKeydown: false,
+        action: (text, str) => {
+          let [key, value] = str.split('.');
+          this.sortOptions[key] = value;
+          let selected = ['by.' + this.sortOptions.by, 'order.' + this.sortOptions.order];
+          $btnSort.find('.menu > .item').each((index, el) => {
+            let $el = $(el);
+            if (selected.includes($el.attr('data-value'))) {
+              $el.addClass('active');
+            } else {
+              $el.removeClass('active');
+            }
+          });
+        }
+      });
+    });
   },
   methods: {
     uploadHandler() {
