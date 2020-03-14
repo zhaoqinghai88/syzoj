@@ -49,7 +49,8 @@
       <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js"></script>
       <script>
         document.addEventListener('DOMContentLoaded', () => {
-          pangu.autoSpacingPage();
+          const flag = <%- JSON.stringify(typeof autoSpacingDisabled === 'undefined') %>;
+          flag ? pangu.autoSpacingPage() : pangu.spacingPage();
         });
       </script>
     <% } %>
