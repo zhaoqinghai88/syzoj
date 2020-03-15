@@ -47,11 +47,14 @@
             for (let problem of problems) {
               let i = 0, min, minPos = -1;
               for (let item of ranklist) {
+                if (!item.is_official) {
+                  continue;
+                }
                 i++;
                 let condition;
                 if (contest.type === 'acm') condition = item.player.score_details[problem.id] && item.player.score_details[problem.id].accepted && (minPos === -1 || item.player.score_details[problem.id].acceptedTime < min.player.score_details[problem.id].acceptedTime);
                 else condition = item.player.score_details[problem.id] && item.player.score_details[problem.id].score === 100 && (minPos === -1 || item.player.score_details[problem.id].judge_state.submit_time < min.player.score_details[problem.id].judge_state.submit_time);
-                if (condition && item.is_official) {
+                if (condition) {
                   min = item;
                   minPos = i;
                 }
@@ -122,7 +125,7 @@
                   </td>
                 <% } %>
                 <% for (let problem of problems) { %>
-                  <% if (problem.min === i) { %>
+                  <% if (item.is_official && problem.min === i) { %>
                     <td style="background: rgb(244, 255, 245); ">
                   <% } else { %>
                     <td>
