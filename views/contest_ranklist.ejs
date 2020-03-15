@@ -47,11 +47,14 @@
             for (let problem of problems) {
               let i = 0, min, minPos = -1;
               for (let item of ranklist) {
+                if (!item.is_official) {
+                  continue;
+                }
                 i++;
                 let condition;
                 if (contest.type === 'acm') condition = item.player.score_details[problem.id] && item.player.score_details[problem.id].accepted && (minPos === -1 || item.player.score_details[problem.id].acceptedTime < min.player.score_details[problem.id].acceptedTime);
                 else condition = item.player.score_details[problem.id] && item.player.score_details[problem.id].score === 100 && (minPos === -1 || item.player.score_details[problem.id].judge_state.submit_time < min.player.score_details[problem.id].judge_state.submit_time);
-                if (condition && item.is_official) {
+                if (condition) {
                   min = item;
                   minPos = i;
                 }
@@ -61,13 +64,15 @@
 
             let i = 0, rank = 0, lastItem;
             for (let item of ranklist) {
-              i++;
+              if(item.is_official) {
+                i++;
+              }
               let latest = contest.start_time, timeSum = 0, unacceptedCount = 0;
             %>
             <tr>
                 <%
                   if (contest.type === 'noi' || contest.type === 'ioi' || contest.type === 'crt') {
-                    if (i === 1 || item.player.score !== lastItem.player.score) rank = i;
+                    if (item.is_official && (i === 1 || item.player.score !== lastItem.player.score)) rank = i;
                   } else if (contest.type === 'acm') {
                     for (let problem of problems) {
                       if (item.player.score_details[problem.id] && item.player.score_details[problem.id].accepted) {
@@ -77,11 +82,13 @@
                     }
                     item.player.timeSum = timeSum;
 
-                    if (i === 1 || item.player.score !== lastItem.player.score || item.player.timeSum !== lastItem.player.timeSum) rank = i;
+                    if (item.is_official && (i === 1 || item.player.score !== lastItem.player.score || item.player.timeSum !== lastItem.player.timeSum)) rank = i;
                   }
                 %>
                 <td>
-                  <% if (rank == 1) { %>
+                  <% if (!item.is_official) { %>
+                    <div class="ui blue ribbon label" style="background-color: #6495ED !important;">
+                  <% } else if (rank == 1) { %>
                     <div class="ui yellow ribbon label">
                   <% } else if (rank == 2) { %>
                     <div class="ui ribbon label">
@@ -90,7 +97,11 @@
                   <% } else { %>
                     <div>
                   <% } %>
-                  <%= rank %>
+                  <% if (item.is_official) { %>
+                    <%= rank %>
+                  <% } else { %>
+                    Unofficial
+                  <% } %>
                   </div>
                 </td>
                 <td class="ranklist-item<% if (item.is_official) { %> official<% } %>">
@@ -114,7 +125,7 @@
                   </td>
                 <% } %>
                 <% for (let problem of problems) { %>
-                  <% if (problem.min === i) { %>
+                  <% if (item.is_official && problem.min === i) { %>
                     <td style="background: rgb(244, 255, 245); ">
                   <% } else { %>
                     <td>
