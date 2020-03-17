@@ -1,4 +1,5 @@
 let Problem = syzoj.model('problem');
+let User = syzoj.model('user');
 let JudgeState = syzoj.model('judge_state');
 let FormattedCode = syzoj.model('formatted_code');
 let Contest = syzoj.model('contest');
@@ -169,6 +170,78 @@ app.get('/problems/search', async (req, res) => {
         curOrder: order === 'asc'
       });
     }
+
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.get('/problems/user/:userIDs', async (req, res) => {
+  try {
+    if (!res.locals.user) throw new ErrorMessage("您没有权限进行此操作。");
+
+    let userIDs = Array.from(new Set(req.params.userIDs.split(',').filter(x => x).map(x => {
+      if (isNaN(x)) throw new ErrorMessage("错误的筛选参数。");
+      return parseInt(x);
+    })));
+
+    let users = await Promise.all(userIDs.map(async userID => User.findById(userID)));
+    users.forEach(user => {
+      if (!user) throw new ErrorMessage("用户不存在。");
+    });
+
+    const sort = req.query.sort || syzoj.config.sorting.problem.field;
+    const order = req.query.order || syzoj.config.sorting.problem.order;
+    if (!['id', 'title', 'rating', 'ac_num', 'submit_num', 'ac_rate'].includes(sort) || !['asc', 'desc'].includes(order)) {
+      throw new ErrorMessage('错误的排序参数。');
+    }
+
+    let allowedManage = await res.locals.user.hasPrivilege('manage_problem');
+
+    if (!allowedManage) {
+      if (userIDs.length > 1 || userIDs[0] != res.locals.user.id) throw new ErrorMessage("您没有权限进行此操作。");
+    }
+
+    let query = Problem.createQueryBuilder();
+
+    query.where('user_id IN (:...userIDs)', { userIDs: userIDs });
+
+    if (sort === 'ac_rate') {
+      query.addOrderBy('ac_num / submit_num', order.toUpperCase());
+    } else {
+      query.addOrderBy(sort, order.toUpperCase());
+    }
+
+    let paginate = syzoj.utils.paginate(await Problem.countForPagination(query), req.query.page, syzoj.config.page.problem);
+    let problems = await Problem.queryPage(paginate, query);
+
+    await problems.forEachAsync(async problem => {
+      problem.allowedEdit = await problem.isAllowedEditBy(res.locals.user);
+      problem.judge_state = await problem.getJudgeState(res.locals.user, true);
+      problem.tags = await problem.getTags();
+      sortTagList(problem.tags);
+    });
+
+    let allTags = await getAllTags();
+    let todoList = null;
+    if (res.locals.user) {
+      todoList = new Set(await res.locals.user.getTodoList());
+    }
+    res.render('problems', {
+      allowedManageTag: res.locals.user && await res.locals.user.hasPrivilege('manage_problem_tag'),
+      providers: users,
+      providerIDs: userIDs,
+      problems: problems,
+      allTags: allTags,
+      todoList: todoList,
+      showTagFilter: false,
+      paginate: paginate,
+      curSort: sort,
+      curOrder: order === 'asc'
+    });
 
   } catch (e) {
     syzoj.log(e);
