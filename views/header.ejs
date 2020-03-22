@@ -49,8 +49,15 @@
       <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js"></script>
       <script>
         document.addEventListener('DOMContentLoaded', () => {
-          const flag = <%- JSON.stringify(typeof autoSpacingDisabled === 'undefined') %>;
-          flag ? pangu.autoSpacingPage() : pangu.spacingPage();
+          const mode = <%- JSON.stringify(typeof panguMode === 'undefined' ? 'watch' : panguMode) %>;
+          switch (mode) {
+            case 'watch':
+              pangu.autoSpacingPage();
+              break;
+            case 'once':
+              pangu.spacingPage();
+              break;
+          }
         });
       </script>
     <% } %>
