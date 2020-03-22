@@ -618,7 +618,7 @@ app.get('/admin/bulk_register', async (req, res) => {
 app.post('/admin/bulk_register', async (req, res) => {
   try {
     if (!res.locals.user || !res.locals.user.is_admin) throw new ErrorMessage('您没有权限进行此操作。');
-    
+
     var users = req.body.users;
     await users.forEachAsync(async (info, index) => {
       var username = info.username;
@@ -677,9 +677,9 @@ app.post('/admin/bulk_public', async (req, res) => {
         num_max = parseInt(req.body.number_max),
         is_public = req.body.is_public === 'on',
         is_data_public = req.body.is_data_public === 'on';
-    
+
     if (isNaN(num_min) || isNaN(num_max) || num_min > num_max) throw new ErrorMessage("参数错误");
-    
+
     let problems = await Problem.find({
       where: { id: TypeORM.Between(num_min, num_max) }
     });
@@ -754,6 +754,7 @@ let processQuoteData = (quote) => ({
     filename: quote.filename,
     type: quote.type,
     time: syzoj.utils.formatDate(quote.time.getTime() / 1000),
+    time_raw: quote.time.getTime(),
     size: quote.buffer.length,
     url: syzoj.utils.makeQuoteUrl(quote.from, quote.filename)
 });
