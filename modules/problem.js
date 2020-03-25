@@ -188,6 +188,8 @@ app.get('/problems/user/:userIDs', async (req, res) => {
       return parseInt(x);
     })));
 
+    if (!userIDs.length) throw new ErrorMessage("错误的筛选参数。");
+
     let users = await Promise.all(userIDs.map(async userID => User.findById(userID)));
     users.forEach(user => {
       if (!user) throw new ErrorMessage("用户不存在。");
