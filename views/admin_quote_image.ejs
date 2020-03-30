@@ -314,7 +314,9 @@ let app = new Vue({
         summary.append(quote);
       }
       this.stat = {
-        details: Array.from(details).map(([from, detail]) => ({ from, ...detail.toPlain() })),
+        details: Array.from(details)
+          .map(([from, detail]) => ({ from, ...detail.toPlain() }))
+          .sort(({count: a}, {count: b}) => (a < b) - (a > b)),
         summary: summary.toPlain()
       };
       $('#modal-stat').modal('show');
