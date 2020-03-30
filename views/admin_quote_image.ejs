@@ -24,7 +24,7 @@
     <a class="ui small purple dropdown button" ref="btn_sort" v-once>
       <i class="sort icon"></i> 排序方式
       <div class="ui menu">
-        <div class="item active" data-value="by.from">
+        <div class="item" data-value="by.from">
           <i class="at icon"></i>
           来源
         </div>
@@ -41,7 +41,7 @@
           大小
         </div>
         <div class="divider"></div>
-        <div class="item active" data-value="order.asc">
+        <div class="item" data-value="order.asc">
           <i class="sort amount up icon"></i>
           升序
         </div>
@@ -145,8 +145,8 @@ let app = new Vue({
     quotes: <%- JSON.stringify(quotes) %>,
     stat: null,
     sortOptions: {
-      by: 'from',
-      order: 'asc'
+      by: 'time',
+      order: 'desc'
     }
   },
   computed: {
@@ -162,21 +162,26 @@ let app = new Vue({
   created() {
     $(() => {
       let $btnSort = $(this.$refs.btn_sort);
+      let $menuItem = $btnSort.find('.menu > .item');
+      const updateMenu = () => {
+        let selected = ['by.' + this.sortOptions.by, 'order.' + this.sortOptions.order];
+        $menuItem.each((index, el) => {
+          let $el = $(el);
+          if (selected.includes($el.attr('data-value'))) {
+            $el.addClass('active');
+          } else {
+            $el.removeClass('active');
+          }
+        });
+      };
+      updateMenu();
       $btnSort.dropdown({
         maxSelections: 2,
         selectOnKeydown: false,
         action: (text, str) => {
           let [key, value] = str.split('.');
           this.sortOptions[key] = value;
-          let selected = ['by.' + this.sortOptions.by, 'order.' + this.sortOptions.order];
-          $btnSort.find('.menu > .item').each((index, el) => {
-            let $el = $(el);
-            if (selected.includes($el.attr('data-value'))) {
-              $el.addClass('active');
-            } else {
-              $el.removeClass('active');
-            }
-          });
+          updateMenu();
         }
       });
     });
