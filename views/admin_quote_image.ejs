@@ -205,7 +205,7 @@ let app = new Vue({
         if (!from) return;
         let $form = $('#upload-form');
         let $input = $form.find('input.file');
-        $input.val('').one('input', () => {
+        $input.val('').off('input').one('input', () => {
           if (!$input.prop('files').length) return;
           let formData = new FormData($form.get(0));
           $.ajax({
