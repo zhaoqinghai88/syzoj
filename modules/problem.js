@@ -483,7 +483,9 @@ app.post('/problem/:id/edit', async (req, res) => {
         memory_limit: syzoj.config.default.problem.memory_limit,
         type: 'traditional',
         is_public: false,
-        is_data_public: true
+        is_data_public: true,
+        submit_num: 0,
+        ac_num: 0
       });
 
       if (await res.locals.user.hasPrivilege('manage_problem')) {
