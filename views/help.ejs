@@ -31,6 +31,7 @@
     <span class="pl-l-Scalar-Plain">cases</span><span class="pl-p-Indicator">:</span> <span class="pl-p-Indicator">[</span><span class="pl-nv">1</span><span class="pl-p-Indicator">,</span> <span class="pl-nv">2</span><span class="pl-p-Indicator">,</span> <span class="pl-nv">3</span><span class="pl-p-Indicator">]</span>       <span class="pl-c1"># 测试点编号可为数字</span>
   <span class="pl-p-Indicator">-</span> <span class="pl-l-Scalar-Plain">score</span><span class="pl-p-Indicator">:</span> <span class="pl-l-Scalar-Plain">30</span>              <span class="pl-c1"># 另一个子任务</span>
     <span class="pl-l-Scalar-Plain">type</span><span class="pl-p-Indicator">:</span> <span class="pl-l-Scalar-Plain">mul</span>
+    <span class="pl-l-Scalar-Plain">dependencies</span><span class="pl-p-Indicator">:</span> <span class="pl-p-Indicator">[</span><span class="pl-nv">1</span><span class="pl-p-Indicator">]</span>      <span class="pl-c1"># 这个子任务依赖的子任务编号（编号从 1 开始，依赖关系必须为 DAG）</span>
     <span class="pl-l-Scalar-Plain">cases</span><span class="pl-p-Indicator">:</span> <span class="pl-p-Indicator">[</span><span class="pl-s">'4'</span><span class="pl-p-Indicator">,</span> <span class="pl-s">'5'</span><span class="pl-p-Indicator">,</span> <span class="pl-s">'6'</span><span class="pl-p-Indicator">]</span> <span class="pl-c1"># 测试点编号也可为字符串</span>
 
 <span class="pl-l-Scalar-Plain">inputFile</span><span class="pl-p-Indicator">:</span> <span class="pl-s">'dat#.in'</span>   <span class="pl-c1"># 测试数据包中的输入文件</span>

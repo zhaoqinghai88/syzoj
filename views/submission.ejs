@@ -237,7 +237,7 @@ const vueApp = new Vue({
   },
   methods: {
     getStatusString(statusCode) {
-      return statusToString[statusCode];
+      return statusToString[statusCode] || 'Skipped';
     },
     firstNonAC(t) {
       if (t.every(function(v){ return v === TestcaseResultType.Accepted;})) {

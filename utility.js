@@ -199,6 +199,11 @@ module.exports = {
         res = config.subtasks.map(st => ({
           score: st.score,
           type: st.type,
+          dependencies: (st.dependencies || []).map(index => {
+            if (!Number.isInteger(index)) throw '子任务依赖编号必须为整数';
+            if (index < 1 || index > config.subtasks.length) throw `子任务依赖编号 ${index} 超出范围`;
+            return index;
+          }),
           cases: st.cases.map(c => {
             function getFileName(template, id, mustExist) {
               let s = template.split('#').join(String(id));

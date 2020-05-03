@@ -21,15 +21,20 @@ let subtaskType = {
     <tbody>
       <% let i = 0; %>
       <% for (let subtask of testcases) { %>
-        <% if (testcases.length !== 1) { %>
-          <tr>
-            <td style="background-color: #F9FAFB" colspan="<%= problem.type === 'submit-answer' ? 3 : 2 %>"><h4 style="margin-bottom: 3px; ">子任务 <%= ++i %></h4><span style="font-weight: normal; "><%= subtaskType[subtask.type] %>，总分值 <%= subtask.score %></span></th>
-          </tr>
-        <% } else { %>
-          <tr>
-            <td style="background-color: #F9FAFB" colspan="<%= problem.type === 'submit-answer' ? 3 : 2 %>"><h4 style="margin-bottom: 3px; ">单个子任务</h4><span style="font-weight: normal; "><%= subtaskType[subtask.type] %></span></th>
-          </tr>
-        <% } %>
+        <tr>
+          <td style="background-color: #F9FAFB" colspan="<%= problem.type === 'submit-answer' ? 3 : 2 %>">
+          <% if (testcases.length !== 1) { %>
+            <h4 style="margin-bottom: 3px; ">子任务 <%= ++i %></h4>
+            <% if (subtask.dependencies.length) { %>
+              <div style="font-weight: normal; ">需要先通过子任务 <%= subtask.dependencies.join(', ') %></div>
+            <% } %>
+            <div style="font-weight: normal; "><%= subtaskType[subtask.type] %>，总分值 <%= subtask.score %></div>
+          <% } else { %>
+            <h4 style="margin-bottom: 3px; ">单个子任务</h4>
+            <span style="font-weight: normal; "><%= subtaskType[subtask.type] %></span>
+          <% } %>
+          </td>
+        </tr>
           <% for (let testcase of subtask.cases) { %>
             <% if (problem.type === 'submit-answer') { %>
               <tr class="center aligned">
