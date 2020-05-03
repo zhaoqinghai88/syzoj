@@ -26,7 +26,7 @@ let subtaskType = {
           <% if (testcases.length !== 1) { %>
             <h4 style="margin-bottom: 3px; ">子任务 <%= ++i %></h4>
             <% if (subtask.dependencies.length) { %>
-              <div style="font-weight: normal; ">需要先通过子任务 <%= subtask.dependencies.join(', ') %></div>
+              <div style="font-weight: normal; ">依赖子任务 <%= subtask.dependencies.join(', ') %></div>
             <% } %>
             <div style="font-weight: normal; "><%= subtaskType[subtask.type] %>，总分值 <%= subtask.score %></div>
           <% } else { %>
