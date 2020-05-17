@@ -81,11 +81,14 @@
       </div>
     </div>
     <div class="right floated five wide column side_bar">
-        <h4 class="ui top attached block header"><i class="ui quote left icon"></i><%= syzoj.config.custom_hitokoto.title %></h4>
+        <%
+          let showCustomHitokoto = user && syzoj.config.custom_hitokoto.enabled;
+          let hitokotoTitle = showCustomHitokoto ? syzoj.config.custom_hitokoto.title : syzoj.config.custom_hitokoto.title_original;
+        %>
+        <h4 class="ui top attached block header"><i class="ui quote left icon"></i><%= hitokotoTitle %></h4>
         <div class="ui bottom attached center aligned segment">
           <div class="ui active centered inline loader" id="hitokoto-loader"></div>
           <%
-            let showCustomHitokoto = user && syzoj.config.custom_hitokoto.enabled;
             let hitokotoUrl = showCustomHitokoto ? "/api/hitokoto" : "https://v1.hitokoto.cn/?c=a";
           %>
           <script>

@@ -150,7 +150,8 @@
   "hidden_problem_tag_colors": [],
   "visitor_restriction": false,
   "custom_hitokoto": {
-    "title": "一言（ヒトコト）",
+    "title": "语录",
+    "title_original": "一言（ヒトコト）",
     "enabled": false
   }
 }
