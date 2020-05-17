@@ -151,7 +151,7 @@
   "visitor_restriction": false,
   "custom_hitokoto": {
     "title": "语录",
-    "title_no_login": "一言（ヒトコト）",
+    "title_original": "一言（ヒトコト）",
     "enabled": false
   }
 }
