@@ -217,13 +217,15 @@ export default class Quote extends Model {
   }
 
   async delete() {
-    const fromItems = await QuoteFrom.find({
-      where: {
-        quote_id: this.id
-      }
-    });
+    await QuoteFrom.createQueryBuilder()
+      .delete()
+      .where("quote_id = :id", { id: this.id })
+      .execute();
 
-    await Promise.all(fromItems.map(item => item.destroy()));
+    await QuoteUserVote.createQueryBuilder()
+      .delete()
+      .where("quote_id = :id", { id: this.id })
+      .execute();
 
     if (this.type === QuoteType.image) {
       const filename = (this.content as ImageQuoteContent).filename;
