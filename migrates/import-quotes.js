@@ -13,20 +13,24 @@ const fn = async () => {
   const hitokotoList = require('../custom-hitokoto.json');
 
   function checkDialog(item) {
-    const { hitokoto, from } = item;
+    const { hitokoto } = item;
 
-    const lines = hitokoto.split('\n');
-    if (lines.length === 1) return null;
+    item.is_dialog = false;
+
+    if (item.from) return;
+
+    const lines = hitokoto.split(/<br ?\/?>/);
+    if (lines.length === 1) return;
 
     const fromList = new Set();
 
     for (const line of lines) {
       const tmp = line.match(/^([a-zA-Z0-9_-]+)(: |：)(.+)$/);
-      if (!tmp) return null;
+      if (!tmp) return;
       fromList.add(tmp[1]);
     }
 
-    item.hitokoto = lines.join('\n\n');
+    item.hitokoto = lines.map(a => a.trim()).join('  \n');
     item.from = [...fromList];
     item.is_dialog = true;
   }
@@ -35,7 +39,7 @@ const fn = async () => {
     try {
       checkDialog(item);
   
-      item.from = item.from || '佚名';
+      item.from = item.from || 'Unknown';
       if (typeof item.from === 'string') {
         item.from = [item.from];
       }
