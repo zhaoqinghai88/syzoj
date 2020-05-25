@@ -14,7 +14,7 @@ const assert: (flag: any, message?: string) => void = syzoj.utils.assert;
 
 function exists(path: string): Promise<boolean> {
   return new Promise(resolve => {
-    fs.access(path, fs.constants.F_OK, err => resolve(!!err));
+    fs.access(path, fs.constants.F_OK, err => resolve(!err));
   });
 }
 

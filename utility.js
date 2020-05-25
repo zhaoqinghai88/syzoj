@@ -7,9 +7,9 @@ Array.prototype.filterAsync = async function (fn) {
   return this.filter((x, i) => a[i]);
 };
 
-global.ErrorMessage = class ErrorMessage {
+global.ErrorMessage = class ErrorMessage extends Error {
   constructor(message, nextUrls, details) {
-    this.message = message;
+    super(message);
     this.nextUrls = nextUrls || {};
     this.details = details;
   }
@@ -353,6 +353,6 @@ module.exports = {
     return result;
   },
   assert(flag, message = "参数错误") {
-    if (!flag) throw new ErrorMessage(message)
+    if (!flag) throw new ErrorMessage(message);
   }
 };
