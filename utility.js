@@ -131,9 +131,6 @@ module.exports = {
     if (encoded) res += '?' + encoded;
     return res;
   },
-  makeQuoteUrl(by, filename) {
-    return this.makeUrl(['quote', encodeURIComponent(by), encodeURIComponent(filename)]);
-  },
   highlight(code, lang) {
     return new Promise((resolve, reject) => {
       renderer.highlight(code, lang, res => {
@@ -354,5 +351,8 @@ module.exports = {
     let result = this.striEquals(req.body[field], req.session.captcha);
     req.session.captcha = null;
     return result;
+  },
+  assert(flag, message = "参数错误") {
+    if (!flag) throw new ErrorMessage(message)
   }
 };

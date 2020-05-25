@@ -1,0 +1,30 @@
+
+<style>
+  .quote-content {
+    text-align: center;
+  }
+  .quote-content .from {
+    margin-top: .5em;
+    text-align: right;
+  }
+</style>
+
+<script id="quoteContentTemplate" type="text/x-template">
+  <div class="quote-content">
+    <template v-if="quote.type === 'hitokoto'">
+      <div class="hitokoto" v-if="quote.content.html" v-html="quote.content.html"></div>
+      <div class="hitokoto" v-if="quote.content.text">{{ quote.content.text }}</div>
+      <div class="from" v-if="quote.from.length && !quote.content.is_dialog">—— {{ quote.from.join(', ') }}</div>
+    </template>
+    <template v-if="quote.type === 'image'">
+      <img class="image" :src="quote.content.url">
+    </template>
+  </div>
+</script>
+
+<script>
+  Vue.component('quote-content', {
+    template: '#quoteContentTemplate',
+    props: ['quote']
+  });
+</script>

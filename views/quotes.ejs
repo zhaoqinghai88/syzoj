@@ -1,0 +1,519 @@
+<% this.title = '语录列表' %>
+<% include header %>
+
+<style>
+  .topbar {
+    margin-bottom: 1em;
+  }
+  .topbar > .ui.button:not(:first-child) {
+    margin-left: 1em;
+  }
+  .ui.card > .hitokoto.content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .ui.card > .grow {
+    flex-grow: 1 !important;
+  }
+  .ui.card > .no-grow {
+    flex-grow: 0 !important;
+  }
+  .ui.card > .shrink {
+    flex-shrink: 1 !important;
+    overflow: hidden;
+  }
+  .ui.card .image-box {
+    width: 100%;
+    height: 100%;
+    max-height: 12em;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .ui.card .actions > .btn-delete:hover {
+    color: red !important;
+  }
+  .ui.card .meta > .vote.active {
+    color: #333;
+  }
+</style>
+
+<div class="padding">
+  <div id="vueApp" style="display: none;">
+    <div class="topbar">
+      <a class="ui small green dropdown button" ref="btn_add">
+        <i class="plus icon"></i> 添加语录
+        <div class="ui menu">
+          <div class="item" @click="addHitokoto">
+            <i class="quote left icon"></i>
+            一言语录
+          </div>
+          <div class="item" @click="addImage">
+            <i class="images outline icon"></i>
+            图片语录
+          </div>
+        </div>
+      </a>
+      <a class="ui small blue button" :class="getActionClass('load')" @click="reloadList">
+        <i class="redo icon"></i> 刷新列表
+      </a>
+      <a class="ui small teal button" @click="showStatistics">
+        <i class="info icon"></i> 统计信息
+      </a>
+    </div>
+
+    <div class="ui cards" :class="containerClassName">
+      <div class="ui card" v-for="quote of filteredQuotes">
+        <template v-if="quote.type === 'hitokoto'">
+          <quote-content class="hitokoto content" :quote="quote"></quote-content>
+        </template>
+        <template v-if="quote.type === 'image'">
+          <div class="grow shrink image">
+            <quote-content class="image-box" :quote="quote"></quote-content>
+          </div>
+        </template>
+        <div class="no-grow content">
+          <span v-if="shouldShowQuoteFrom(quote)">From {{ quote.from.join(', ') }}</span>
+          <div class="meta">
+            <span>{{ quote.creation_time }}</span>
+          </div>
+          <div class="meta">
+            <span v-if="quote.provider.id !== userId">
+              By <a style="color: inherit;" :href="'/user/' + quote.provider.id" target="_blank">{{ quote.provider.username }}</a>
+            </span>
+            <template v-if="quote.type === 'image'">
+              <span>{{ formatSize(quote.content.size, 2) }}</span>
+              <span>{{ quote.content.filename.split('.')[1] }}</span>
+            </template>
+          </div>
+        </div>
+        <div class="extra no-grow content">
+          <div class="meta">
+            <span class="vote" :class="{ active: quote.vote.self === 1 }">
+              <i class="thumbs up outline icon"></i>
+              {{ quote.vote.total.up }}
+            </span>
+            <span class="vote" :class="{ active: quote.vote.self === -1 }">
+              <i class="thumbs down outline icon"></i>
+              {{ quote.vote.total.down }}
+            </span>
+            <div class="actions" style="float: right;">
+              <a v-if="quote.type === 'image'" @click="previewItem(quote)">
+                <i class="eye icon"></i>
+              </a>
+              <a @click="editItem(quote)">
+                <i class="edit icon"></i>
+              </a>
+              <a class="btn-delete" @click="deleteItem(quote)">
+                <i class="trash alternate icon"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ui-modal ref="modalError" variation="mini" closable auto-close allow-multiple>
+      <template #header>{{ errorTitle }}</template>
+      <p>{{ errorMessage }}</p>
+      <template #actions>
+        <div class="ui positive button">关闭</div>
+      </template>
+    </ui-modal>
+
+    <ui-modal ref="modalEdit" auto-close-when-deny @approve="confirmEditHandler" @hidden="finishEditHandler">
+      <template v-if="quoteToEdit" #header>
+        <template v-if="quoteToEdit.id === null">
+          添加语录
+        </template>
+        <template v-else>
+          编辑语录
+        </template>
+      </template>
+      <div v-if="quoteToEdit" class="ui form">
+        <div class="ui field">
+          <label>语录来源</label>
+          <ui-search-dropdown
+            ref="quoteEditDropdown"
+            class="fluid"
+            :options="quoteEditDropdownOptions"
+            v-model="quoteToEdit.from"
+          >
+            这条语录来自谁？
+          </ui-search-dropdown>
+        </div>
+        <template v-if="quoteToEdit.type === 'hitokoto'">
+          <div class="ui field">
+            <label>语录内容（支持 Markdown 与 HTML）</label>
+            <textarea class="markdown-edit" rows="8" v-model="quoteToEdit.content.hitokoto"></textarea>
+          </div>
+          <div class="ui field">
+            <ui-checkbox class="toggle" v-model="quoteToEdit.content.is_dialog">这是一个对话</ui-checkbox>
+          </div>
+        </template>
+        <template v-if="quoteToEdit.type === 'image'">
+          <template v-if="quoteToEdit.id === null">
+            <div class="ui field">
+              <label>上传图片（支持多选）</label>
+              <input ref="fileInput" type="file" multiple accept="image/*">
+            </div>
+          </template>
+        </template>
+      </div>  
+      <template #actions>
+        <div class="ui negative button">取消</div>
+        <div class="ui positive button" :class="getActionClass('edit')">确定</div>
+      </template>
+    </ui-modal>
+
+    <ui-modal ref="modalPreview" variation="tiny" closable auto-close>
+      <template #header>预览</template>
+      <div v-if="quoteToPreview" style="text-align: center;">
+        <img :src="quoteToPreview.content.url">
+      </div>
+      <template #actions>
+        <div class="ui positive button">关闭</div>
+      </template>
+    </ui-modal>
+
+    <ui-modal ref="modalDelete" variation="small" closable auto-close-when-deny @approve="confirmDeleteHandler">
+      <template #header>删除语录</template>
+      <div v-if="quoteToDelete" class="ui grid">
+        <div class="ui seven wide column">
+          <quote-content class="ui existing segment" :quote="quoteToDelete"></quote-content>
+        </div>
+        <div class="ui nine wide column">
+          <p>确定要删除这条语录吗？</p>
+          <p>来源：{{ quoteToDelete.from.join(', ') }}</p>
+        </div>
+      </div>
+      <template #actions>
+        <div class="ui negative button">取消</div>
+        <div class="ui positive button" :class="getActionClass('delete')">确定</div>
+      </template>
+    </ui-modal>
+
+    <ui-modal ref="modalStat" scrolling closable auto-close>
+      <template #header>统计信息</template>
+      <table v-if="stat" class="ui center aligned celled table">
+        <thead>
+          <tr>
+            <th>来源</th>
+            <th>总数</th>
+            <th>文件大小</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="detail in stat.details">
+            <td>{{ detail.from }}</td>
+            <td>{{ detail.count }}</td>
+            <td>{{ formatSize(detail.size, 2) }}</td>
+          </tr>
+          <tr>
+            <td>总计</td>
+            <td>{{ stat.summary.count }}</td>
+            <td>{{ formatSize(stat.summary.size, 2) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <template #actions>
+        <div class="ui positive button">确定</div>
+      </template>
+    </div>
+  </ui-modal>
+</div>
+
+<script src="<%- syzoj.utils.makeUrl(['cdnjs', `vue/2.6.11/vue.${syzoj.production ? 'min.js' : 'js'}`]) %>"></script>
+
+<% include quote_content %>
+<% include ui_input %>
+<% include ui_modal %>
+
+<script>
+
+  Vue.prototype.formatSize = function (x, precision) {
+    if (typeof x !== 'number') return '--';
+    let unit = 'B', units = ['K', 'M', 'G', 'T'];
+    for (let i in units) if (x > 1024) x /= 1024, unit = units[i];
+    var fixed = x === Math.round(x) ? x.toString() : x.toFixed(precision);
+    return fixed + ' ' + unit;
+  };
+
+  class QuoteStat {
+    constructor() {
+      this.count = 0;
+      this.size = 0;
+    }
+    append(quote) {
+      this.count += 1;
+      this.size += quote.size;
+    }
+    toPlain() {
+      return {
+        count: this.count,
+        size: this.size
+      };
+    }
+  }
+
+  $.ajaxSetup({
+    contentType: 'application/json; charset=utf-8',
+    dataType: 'json'
+  });
+
+  let app = new Vue({
+    el: '#vueApp',
+    data: {
+      userId: <%= user.id %>,
+      pending: {
+        load: false,
+        edit: false,
+        delete: false
+      },
+      errorMessage: null,
+      errorTitle: null,
+      quotes: [],
+      quoteToPreview: null,
+      quoteToEdit: null,
+      quoteToDelete: null,
+      stat: null,
+      cardsEachRow: 4
+    },
+
+    mounted() {
+      $(this.$el).show();
+
+      $(() => {
+        const $btnAdd = $(this.$refs.btn_add);
+
+        $btnAdd.dropdown({
+          selectOnKeydown: false,
+          action: 'hide'
+        });
+
+        this.reloadList();
+      });
+    },
+
+    computed: {
+      filteredQuotes() {
+        let result = this.quotes.slice(0);
+        return result;
+      },
+
+      containerClassName() {
+        return [, 'one', 'two', 'three', 'four', 'five'][this.cardsEachRow];
+      },
+
+      quoteEditDropdownOptions() {
+        return {
+          allowAdditions: true,
+          apiSettings: {
+            url: '/api/user/search?q={query}',
+            onResponse: resp => {
+              resp.success = !resp.error;
+              resp.results = resp.data
+                .map(({ username }) => username)
+                .filter(username => !this.quoteToEdit.from.includes(username))
+                .map(username => ({ name: username, value: username }));
+              return resp;
+            },
+            cache: false
+          },
+          saveRemoteData: false,
+          filterRemoteData: true
+        };
+      }
+    },
+
+    methods: {
+      showError(message, title) {
+        this.errorMessage = message || '未知错误';
+        this.errorTitle = title || '好像哪里有点问题';
+        this.$refs.modalError.show();
+      },
+
+      async pendAction(name, callback) {
+        if (this.pending[name]) return;
+        this.pending[name] = true;
+        try {
+          let result = await callback();
+          if (result) this.loadHandler(result);
+        } catch (err) {
+          let message = null;
+          if (err instanceof Error) {
+            message = err.message;
+          } else if (typeof err === 'object') {
+            message = err.status ? `${err.status} ${err.statusText}` : '网络错误';
+          } else if (typeof err === 'string') {
+            message = err;
+          }
+          this.showError(message || '未知错误');
+        } finally {
+          this.pending[name] = false;
+        }
+      },
+
+      getActionClass(name) {
+        const flag = this.pending[name];
+        return {
+          loading: flag,
+          disabled: flag
+        };
+      },
+
+      shouldShowQuoteFrom(quote) {
+        if (!quote.from.length) return false;
+        switch (quote.type) {
+          case 'hitokoto':
+            return quote.content.is_dialog;
+          default:
+            return true;
+        }
+      },
+
+      loadHandler(quotes) {
+        quotes.sort((a, b) => b.id - a.id);
+        this.quotes = quotes;
+      },
+
+      reloadList() {
+        this.pendAction('load', () =>
+          new Promise((resolve, reject) => {
+            $.get('/api/quote/list', resp => {
+              if (resp.error) {
+                reject(resp.error);
+              } else {
+                resolve(resp.result);
+              }
+            }).fail(reject);
+          })
+        );
+      },
+
+      showEdit(quote) {
+        if (quote.id === null) {
+          this.quoteToEdit = quote;
+        } else {
+          this.quoteToEdit = JSON.parse(JSON.stringify(quote));
+        }
+        this.$refs.modalEdit.show();
+      },
+
+      addHitokoto() {
+        this.showEdit({
+          id: null,
+          type: 'hitokoto',
+          content: {
+            hitokoto: '',
+            is_dialog: false
+          },
+          from: [],
+          weight: 1
+        });
+      },
+
+      addImage() {
+        this.showEdit({
+          id: null,
+          type: 'image',
+          content: {},
+          from: [],
+          weight: 1
+        });
+      },
+
+      previewItem(quote) {
+        this.quoteToPreview = quote;
+        this.$refs.modalPreview.show();
+      },
+
+      editItem(quote) {
+        this.showEdit(quote);
+      },
+
+      deleteItem(quote) {
+        this.quoteToDelete = quote;
+        this.$refs.modalDelete.show();
+      },
+
+      confirmEditHandler() {
+        this.pendAction('edit', () => {
+          return new Promise((resolve, reject) => {
+            const quote = this.quoteToEdit;
+
+            const formData = new FormData();
+            formData.set('data', JSON.stringify(quote));
+
+            if (quote.id === null && quote.type === 'image') {
+              for (const file of this.$refs.fileInput.files) {
+                formData.append('files', file);
+              }
+            }
+            
+            $.ajax({
+              method: 'POST',
+              url: `/api/quote/${quote.id === null ? 0 : quote.id}/edit`,
+              data: formData,
+              mimeType: "multipart/form-data",
+              contentType: false,
+              cache: false,
+              processData: false
+            }).done(resp => {
+              if (resp.error) {
+                reject(resp.error);
+              } else {
+                this.$refs.modalEdit.hide();
+                resolve(resp.result);
+              }
+            }).fail(reject);
+          });
+        });
+      },
+
+      finishEditHandler() {
+        this.quoteToEdit = null;
+      },
+
+      confirmDeleteHandler() {
+        this.pendAction('delete', () => {
+          return new Promise((resolve, reject) => {
+            $.post(`/api/quote/${this.quoteToDelete.id}/delete`, resp => {
+              if (resp.error) {
+                reject(resp.error);
+              } else {
+                this.$refs.modalDelete.hide();
+                resolve(resp.result);
+              }
+            }).fail(reject);
+          });
+        });
+      },
+
+      showStatistics() {
+        return this.showError('咕咕咕');
+        let details = new Map(), summary = new QuoteStat;
+        for (let quote of this.filteredQuotes) {
+          let detail = details.get(quote.from);
+          if (!detail) {
+            details.set(quote.from, detail = new QuoteStat);
+          }
+          detail.append(quote);
+          summary.append(quote);
+        }
+        this.stat = {
+          details: Array.from(details)
+            .map(([from, detail]) => ({ from, ...detail.toPlain() }))
+            .sort(({count: a}, {count: b}) => (a < b) - (a > b)),
+          summary: summary.toPlain()
+        };
+        $('#modal-stat').modal('show');
+      }
+    }
+  });
+
+</script>
+
+<% include footer %>

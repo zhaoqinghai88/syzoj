@@ -7,6 +7,11 @@
     padding-top: 100%;
 }
 </style>
+
+<script src="<%- lib('vue/2.5.21/vue.min.js') %>"></script>
+<% include quote_content %>
+<% include quote_container %>
+
 <div class="padding">
 <div class="ui grid">
     <div class="row">
@@ -35,6 +40,17 @@
                     <a style="float: right; "><i class="star icon"></i>积分 <%= show_user.rating %></a>
                 </div>
             </div>
+            <% if (syzoj.config.custom_hitokoto && syzoj.config.custom_hitokoto.enabled && user) { %>
+                <h4 class="ui top attached block header">名言警句</h4>
+                <div id="quote-container" class="ui bottom attached segment">
+                    <quote-container url="<%= syzoj.utils.makeUrl(['api', 'quote'], { from: show_user.username }) %>" is-custom></quote-container>
+                </div>
+                <script>
+                    let vueQuote = new Vue({
+                        el: '#quote-container'
+                    });
+                </script>
+            <% } %>
             <% if (show_user.ac_problems.length) { %>
                 <h4 class="ui top attached block header">通过的题目</h4>
                 <div class="ui bottom attached segment">
