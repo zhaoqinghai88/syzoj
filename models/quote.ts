@@ -48,6 +48,10 @@ export default class Quote extends Model {
     return pathlib.join(this.baseDir, filename);
   }
 
+  static getBackupSavePath(filename: string): string {
+    return this.getSavePath('deleted.' + filename);
+  }
+
   async loadRelationships() {
     this.provider = await User.findById(this.provider_id);
     this.from = (await QuoteFrom.find({
@@ -164,12 +168,20 @@ export default class Quote extends Model {
     const md5 = syzoj.utils.md5(buffer);
     const filename = md5 + extname;
     const savePath = Quote.getSavePath(filename);
+    const backupPath = Quote.getBackupSavePath(filename);
 
     await syzoj.utils.lock(['Quote::Image'], async () => {
       if (await fs.exists(savePath)) {
         throw new ErrorMessage("图片已存在");
       }
       await fs.rename(file.path, savePath);
+      if (await fs.exists(backupPath)) {
+        try {
+          await fs.unlink(backupPath);
+        } catch (err) {
+          syzoj.log(err);
+        }
+      }
     });
 
     const content = this.content as ImageQuoteContent;
@@ -214,7 +226,7 @@ export default class Quote extends Model {
     if (this.type === QuoteType.image) {
       const filename = (this.content as ImageQuoteContent).filename;
       const path = Quote.getSavePath(filename);
-      const pathNew = Quote.getSavePath(`deleted.${filename}`);
+      const pathNew = Quote.getBackupSavePath(filename);
 
       await syzoj.utils.lock(['Quote::Image'], () => fs.rename(path, pathNew));
     }
