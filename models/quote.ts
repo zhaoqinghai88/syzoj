@@ -12,6 +12,12 @@ declare var syzoj, ErrorMessage: any;
 
 const assert: (flag: any, message?: string) => void = syzoj.utils.assert;
 
+function exists(path: string): Promise<boolean> {
+  return new Promise(resolve => {
+    fs.access(path, fs.constants.F_OK, err => resolve(!!err));
+  });
+}
+
 @TypeORM.Entity()
 export default class Quote extends Model {
   static cache = true;
@@ -171,17 +177,13 @@ export default class Quote extends Model {
     const backupPath = Quote.getBackupSavePath(filename);
 
     await syzoj.utils.lock(['Quote::Image'], async () => {
-      if (await fs.exists(savePath)) {
+      if (await exists(savePath)) {
         throw new ErrorMessage("图片已存在");
       }
       await fs.rename(file.path, savePath);
-      if (await fs.exists(backupPath)) {
-        try {
-          await fs.unlink(backupPath);
-        } catch (err) {
-          syzoj.log(err);
-        }
-      }
+      try {
+        await fs.unlink(backupPath);
+      } catch (err) {}
     });
 
     const content = this.content as ImageQuoteContent;
