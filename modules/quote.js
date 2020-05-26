@@ -66,7 +66,7 @@ app.get('/api/quote', async (req, res) => {
 
     const quote = await Quote.pickOne(where);
     assert(quote, "这里什么也没有……");
-    
+
     res.send({
       error: null,
       result: await processQuote(quote, res.locals.user)
@@ -170,7 +170,12 @@ app.post('/api/quote/:id/vote/:vote', async (req, res) => {
 
 app.get('/quotes', async (req, res) => {
   try {
-    res.render('quotes');
+    const { user } = res.locals;
+    const allowedManage = await user.hasPrivilege('manage_quote');
+
+    res.render('quotes', {
+      allowedManage
+    });
   } catch (e) {
     syzoj.log(e);
     res.render('error', {
@@ -179,20 +184,67 @@ app.get('/quotes', async (req, res) => {
   }
 });
 
-async function getQuoteList(user) {
-  const allowedManage = await user.hasPrivilege('manage_quote');
-
-  let quotes = await Quote.pickAll({
-    provider_id: allowedManage ? null : user.id
-  });
-
-  return await Promise.all(quotes.map(quote => processQuote(quote, user, true)));
-}
-
 app.get('/api/quote/list', async (req, res) => {
   try {
+    const { user } = res.locals;
+    const allowedManage = await user.hasPrivilege('manage_quote');
+
+    const currPage = parseInt(req.query.p || 1);
+    const perPage = parseInt(req.query.c);
+    assert(!isNaN(currPage) && currPage > 0);
+    assert(!isNaN(perPage) && perPage > 0 && perPage <= 50);
+
+    const query = Quote.createQueryBuilder().select();
+
+    {
+      let isFirst = true;
+      const setWhere = (...arg) => {
+        if (isFirst) {
+          query.where(...arg);
+          isFirst = false;
+        } else {
+          query.andWhere(...arg);
+        }
+      };
+
+      const { type, from, provider } = req.query;
+
+      if (allowedManage) {
+        if (provider) {
+          assert(syzoj.utils.isValidUsername(provider), "来源名字过于奇怪");
+          const user = /^[0-9]+$/.test(provider)
+            ? await User.findById(provider)
+            : await User.fromName(provider);
+          assert(user, "用户不存在");
+          setWhere('provider_id = :id', { id: user.id });
+        }
+      } else {
+        setWhere('provider_id = :id', { id: user.id });
+      }
+
+      if (type) {
+        assert(['hitokoto', 'image'].includes(type));
+        setWhere('`type` = :type', { type });
+      }
+
+      if (from) {
+        assert(typeof from === 'string' && syzoj.utils.isValidUsername(from), "来源名字过于奇怪");
+        setWhere('id IN (SELECT DISTINCT quote_id AS id FROM quote_from WHERE `from` = :from)', { from });
+      }
+
+      query.orderBy('update_time', 'DESC');
+    }
+
+    const count = await Quote.countForPagination(query);
+    const paginate = syzoj.utils.paginate(count, currPage, perPage);
+    const quotes = await Quote.queryPage(paginate, query);
+
+    const result = await Promise.all(quotes.map(quote => processQuote(quote, user, true)));
+
     res.send({
-      result: await getQuoteList(res.locals.user)
+      error: null,
+      paginate: paginate.toJSON(),
+      result
     });
   } catch (e) {
     syzoj.log(e);
@@ -216,61 +268,78 @@ app.post('/api/quote/:id/edit', app.multer.array('files'), async (req, res) => {
       typeof name === 'string' && syzoj.utils.isValidUsername(name)), "来源名字过于奇怪");
 
     const isNew = data.id === null;
+    const quotes = [];
+    const results = [];
 
-    for (let more = true; more; ) {
-      more = false;
+    const createQuote = () =>
+      Quote.create({
+        type: data.type,
+        content: {},
+        provider_id: user.id,
+        weight: 1,
+        creation_time: new Date()
+      });
 
-      let quote;
+    const findQuoteOrCreate = async () => {
       if (isNew) {
-        quote = Quote.create({
-          type: data.type,
-          content: {},
-          provider_id: user.id,
-          weight: 1,
-          creation_time: new Date()
-        });
+        return createQuote();
       } else {
         assert(Number.isSafeInteger(data.id));
-        quote = await Quote.findById(data.id);
+        const quote = await Quote.findById(data.id);
         assert(quote !== null, "语录不存在");
+        return quote;
       }
+    };
 
-      switch (data.type) {
-        case 'hitokoto':
-          assert(typeof data.content === 'object');
-          assert(typeof data.content.hitokoto === 'string');
-          assert(data.content.hitokoto.length > 0, "内容不能为空");
-          assert(typeof data.content.is_dialog === 'boolean');
+    switch (data.type) {
+      case 'hitokoto':
+        assert(typeof data.content === 'object');
+        assert(typeof data.content.hitokoto === 'string');
+        assert(data.content.hitokoto.length > 0, "内容不能为空");
+        assert(typeof data.content.is_dialog === 'boolean');
 
-          quote.content.hitokoto = data.content.hitokoto;
-          quote.content.is_dialog = data.content.is_dialog;
+        const quote = await findQuoteOrCreate();
 
-          await quote.save();
-          break;
+        quote.content.hitokoto = data.content.hitokoto;
+        quote.content.is_dialog = data.content.is_dialog;
 
-        case 'image':
-          if (isNew) {
-            const file = req.files.pop();
-            more = req.files.length > 0;
-            assert(file, "至少要有一张图片");
+        quotes.push(quote);
+        break;
 
-            await quote.setImage({
-              filename: file.originalname,
-              path: file.path,
-              size: file.size
-            });
+      case 'image':
+        if (isNew) {
+          assert(Array.isArray(req.files) && req.files.length > 0, "至少要有一张图片");
 
-            await quote.save();
+          for (const file of req.files) {
+            const quote = createQuote();
+
+            try {
+              await quote.setImage({
+                filename: file.originalname,
+                path: file.path,
+                size: file.size
+              });
+
+              quotes.push(quote);
+              results.push(`${file.originalname} 上传成功`);
+            } catch (err) {
+              syzoj.log(err);
+              results.push(`${file.originalname} 上传失败：${err.message}`);
+            }
           }
-          break;
-      }
+        }
+        break;
+    }
 
+    for (const quote of quotes) {
+      quote.update_time = new Date();
+      await quote.save();
       await quote.setFrom(data.from, isNew);
     }
 
     res.send({
       error: null,
-      result: await getQuoteList(user)
+      result: results
     });
   } catch (e) {
     syzoj.log(e);
@@ -286,15 +355,14 @@ app.post('/api/quote/:id/delete', async (req, res) => {
 
     const quote = await Quote.findById(req.params.id);
     assert(quote, "这条语录消失了……");
-    
+
     const allowedManage = await user.hasPrivilege('manage_quote');
     assert(allowedManage || quote.provider_id === user.id, "不敢乱删语录啊");
 
     await quote.delete();
 
     res.send({
-      error: null,
-      result: await getQuoteList(user)
+      error: null
     });
   } catch (e) {
     syzoj.log(e);

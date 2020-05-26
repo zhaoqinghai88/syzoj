@@ -240,14 +240,15 @@ module.exports = {
     let pageCnt = Math.ceil(count / perPage);
     if (currPage > pageCnt) currPage = pageCnt;
 
+    const data = { currPage, perPage, pageCnt };
+
     return {
-      currPage: currPage,
-      perPage: perPage,
-      pageCnt: pageCnt,
+      ...data,
       toSQL: () => {
         if (!pageCnt) return '';
         else return ` LIMIT ${(currPage - 1) * perPage},${perPage}`
-      }
+      },
+      toJSON: () => ({ ...data })
     };
   },
   paginateFast(currPageTop, currPageBottom, perPage) {

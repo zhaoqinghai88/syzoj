@@ -43,6 +43,9 @@ export default class Quote extends Model {
   @TypeORM.Column({ type: "datetime" })
   creation_time: Date;
 
+  @TypeORM.Column({ type: 'datetime' })
+  update_time: Date;
+
   provider?: User;
   from?: string[];
 
@@ -244,7 +247,8 @@ export default class Quote extends Model {
       type: this.type,
       content: JSON.parse(JSON.stringify(this.content)),
       from: this.from.slice(0),
-      creation_time: syzoj.utils.formatDate(this.creation_time.getTime() / 1000)
+      creation_time: syzoj.utils.formatDate(this.creation_time.getTime() / 1000),
+      update_time: syzoj.utils.formatDate(this.update_time.getTime() / 1000)
     };
     if (privileged) {
       result = { ...result,

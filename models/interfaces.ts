@@ -22,7 +22,8 @@ export interface UserQuote {
   id: number;
   type: string;
   content: object;
-  creation_time: number;
+  creation_time: string;
+  update_time: string;
   from: string[];
   provider?: {
     id: number;

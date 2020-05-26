@@ -42,6 +42,9 @@
         </span>
       </div>
       <i class="ui random link icon" :class="{ disabled: loading }" @click="fetch()"></i>
+      <a v-if="isCustom" href="<%= syzoj.utils.makeUrl(['quotes']) %>" target="_blank">
+        <i class="ui list black link icon"></i>
+      </a>
     </div>
   </div>
 </script>

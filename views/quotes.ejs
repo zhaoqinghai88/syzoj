@@ -10,6 +10,10 @@
   .topbar > .ui.button:not(:first-child) {
     margin-left: 1em;
   }
+  .pagination-container {
+    text-align: center;
+    margin-bottom: 1em;
+  }
   .ui.card > .hitokoto.content {
     display: flex;
     flex-direction: column;
@@ -58,7 +62,7 @@
           </div>
         </div>
       </a>
-      <a class="ui small blue button" :class="getActionClass('load')" @click="reloadList">
+      <a class="ui small blue button" :class="getActionClass('load')" @click="reloadList(false)">
         <i class="redo icon"></i> 刷新列表
       </a>
       <a class="ui small teal button" @click="showStatistics">
@@ -66,8 +70,35 @@
       </a>
     </div>
 
-    <div class="ui cards" :class="containerClassName">
-      <div class="ui card" v-for="quote of filteredQuotes">
+    <div class="pagination-container" v-if="paginate && paginate.pageCnt > 1">
+      <div class="ui pagination menu">
+        <a class="icon item" @click="navigate(paginate.currPage - 1)" :class="{ disabled: paginate.currPage === 1 }">
+          <i class="chevron left icon"></i>
+        </a>
+        <a
+          v-for="item of paginateItems"
+          class="item"
+          :class="{
+            disabled: item === null,
+            active: item === paginate.currPage
+          }"
+          @click="item !== null && navigate(item)"
+        >
+          <template v-if="item !== null">
+            {{ item }}
+          </template>
+          <template v-else>
+            ...
+          </template>
+        </a>
+        <a class="icon item" @click="navigate(paginate.currPage + 1)" :class="{ disabled: paginate.currPage === paginate.pageCnt }">
+          <i class="chevron right icon"></i>
+        </a>
+      </div>
+    </div>
+
+    <div v-if="quotes.length" class="ui cards" :class="containerClassName">
+      <div class="ui card" v-for="quote of quotes">
         <template v-if="quote.type === 'hitokoto'">
           <quote-content class="hitokoto content" :quote="quote"></quote-content>
         </template>
@@ -77,18 +108,25 @@
           </div>
         </template>
         <div class="no-grow content">
-          <span v-if="shouldShowQuoteFrom(quote)">From {{ quote.from.join(', ') }}</span>
           <div class="meta">
-            <span>{{ quote.creation_time }}</span>
-          </div>
-          <div class="meta">
-            <span v-if="quote.provider.id !== userId">
-              By <a style="color: inherit;" :href="'/user/' + quote.provider.id" target="_blank">{{ quote.provider.username }}</a>
-            </span>
-            <template v-if="quote.type === 'image'">
+            <div>
+              <i class="quote left icon"></i>
+              <span>{{ quote.from.join(', ') }}</span>
+            </div>
+            <div>
+              <i class="clock outline icon"></i>
+              <span>{{ quote.update_time }}</span>
+            </div>
+            <div v-if="quote.provider.id !== userId">
+              <i class="user outline icon"></i>
+              <a style="color: inherit;" :href="'/user/' + quote.provider.id" target="_blank">{{ quote.provider.username }}</a>
+            </div>
+            <div v-if="quote.type === 'image'">
+              <i class="image file outline icon"></i>
+              <span>{{ quote.content.filename.split('.')[1].toUpperCase() }}</span>
+              <i class="hdd outline icon" style="margin-left: .5em;"></i>
               <span>{{ formatSize(quote.content.size, 2) }}</span>
-              <span>{{ quote.content.filename.split('.')[1] }}</span>
-            </template>
+            </div>
           </div>
         </div>
         <div class="extra no-grow content">
@@ -102,6 +140,7 @@
               {{ quote.vote.total.down }}
             </span>
             <div class="actions" style="float: right;">
+              <i class="info circle link icon" :title="getQuoteInfo(quote)"></i>
               <a v-if="quote.type === 'image'" @click="previewItem(quote)">
                 <i class="eye icon"></i>
               </a>
@@ -117,9 +156,22 @@
       </div>
     </div>
 
-    <ui-modal ref="modalError" variation="mini" closable auto-close allow-multiple>
-      <template #header>{{ errorTitle }}</template>
-      <p>{{ errorMessage }}</p>
+    <div v-else class="ui placeholder segment">
+      <div class="ui icon header">
+        <template v-if="pending.load">
+          <i class="notched circle loading icon" style="margin-bottom: 20px;"></i>
+          语录在路上了……
+        </template>
+        <template v-else>
+          <i class="file outline icon" style="margin-bottom: 20px;"></i>
+          这里什么也没有
+        </template>
+      </div>
+    </div>
+
+    <ui-modal ref="modalMessage" :variation="message.variation" closable auto-close allow-multiple>
+      <template #header>{{ message.title }}</template>
+      <p style="white-space: pre-line;">{{ message.content }}</p>
       <template #actions>
         <div class="ui positive button">关闭</div>
       </template>
@@ -152,7 +204,7 @@
             <textarea class="markdown-edit" rows="8" v-model="quoteToEdit.content.hitokoto"></textarea>
           </div>
           <div class="ui field">
-            <ui-checkbox class="toggle" v-model="quoteToEdit.content.is_dialog">这是一个对话</ui-checkbox>
+            <ui-checkbox class="toggle" v-model="quoteToEdit.content.is_dialog">这是一段对话</ui-checkbox>
           </div>
         </template>
         <template v-if="quoteToEdit.type === 'image'">
@@ -170,7 +222,7 @@
       </template>
     </ui-modal>
 
-    <ui-modal ref="modalPreview" variation="tiny" closable auto-close>
+    <ui-modal ref="modalPreview" variation="tiny" closable auto-close scrolling>
       <template #header>预览</template>
       <div v-if="quoteToPreview" style="text-align: center;">
         <img :src="quoteToPreview.content.url">
@@ -235,13 +287,14 @@
 
 <script>
 
-  Vue.prototype.formatSize = function (x, precision) {
+  function formatSize(x, precision) {
     if (typeof x !== 'number') return '--';
     let unit = 'B', units = ['K', 'M', 'G', 'T'];
     for (let i in units) if (x > 1024) x /= 1024, unit = units[i];
     var fixed = x === Math.round(x) ? x.toString() : x.toFixed(precision);
     return fixed + ' ' + unit;
-  };
+  }
+  Vue.prototype.formatSize = formatSize;
 
   class QuoteStat {
     constructor() {
@@ -269,44 +322,67 @@
     el: '#vueApp',
     data: {
       userId: <%= user.id %>,
+      allowedManage: <%- JSON.stringify(!!allowedManage) %>,
       pending: {
         load: false,
         edit: false,
         delete: false
       },
-      errorMessage: null,
-      errorTitle: null,
+      message: {
+        title: null,
+        content: null
+      },
+      paginate: null,
       quotes: [],
       quoteToPreview: null,
       quoteToEdit: null,
       quoteToDelete: null,
       stat: null,
-      cardsEachRow: 4
+      cardsEachRow: 4,
+      rowsPerPage: 4,
+      maxPaginateItems: 15,
+      pagniate: null
     },
 
     mounted() {
-      $(this.$el).show();
-
       $(() => {
-        const $btnAdd = $(this.$refs.btn_add);
-
-        $btnAdd.dropdown({
+        $(this.$refs.btn_add).dropdown({
           selectOnKeydown: false,
           action: 'hide'
         });
 
-        this.reloadList();
+        this.reloadList(true);
+        
+        $(this.$el).show();
       });
     },
 
     computed: {
-      filteredQuotes() {
-        let result = this.quotes.slice(0);
-        return result;
-      },
-
       containerClassName() {
         return [, 'one', 'two', 'three', 'four', 'five'][this.cardsEachRow];
+      },
+
+      cardsPerPage() {
+        return this.cardsEachRow * this.rowsPerPage;
+      },
+
+      paginateItems() {
+        const { currPage, pageCnt } = this.paginate;
+        const range = (l, r) => new Array(r - l + 1).fill(null).map((_, index) => l + index);
+        if (pageCnt <= this.maxPaginateItems) {
+          return range(1, pageCnt);
+        }
+        const expand = (this.maxPaginateItems - 5) / 2;
+        const lbound = 1, rbound = pageCnt;
+        const lWidth = currPage - lbound;
+        const rWidth = rbound - currPage;
+        if (lWidth <= expand + 2) {
+          return [...range(lbound, lbound + 2 * expand + 2), null, rbound];
+        }
+        if (rWidth <= expand + 2) {
+          return [lbound, null, ...range(rbound - 2 * expand - 2, rbound)];
+        }
+        return [lbound, null, ...range(currPage - expand, currPage + expand), null, rbound];
       },
 
       quoteEditDropdownOptions() {
@@ -331,18 +407,18 @@
     },
 
     methods: {
-      showError(message, title) {
-        this.errorMessage = message || '未知错误';
-        this.errorTitle = title || '好像哪里有点问题';
-        this.$refs.modalError.show();
+      showMessage(content, title, variation = 'mini') {
+        this.message = {
+          content, title, variation
+        };
+        this.$refs.modalMessage.show();
       },
 
       async pendAction(name, callback) {
         if (this.pending[name]) return;
         this.pending[name] = true;
         try {
-          let result = await callback();
-          if (result) this.loadHandler(result);
+          await callback();
         } catch (err) {
           let message = null;
           if (err instanceof Error) {
@@ -352,7 +428,7 @@
           } else if (typeof err === 'string') {
             message = err;
           }
-          this.showError(message || '未知错误');
+          this.showMessage(message || '未知错误', '好像哪里有点问题');
         } finally {
           this.pending[name] = false;
         }
@@ -366,33 +442,55 @@
         };
       },
 
-      shouldShowQuoteFrom(quote) {
-        if (!quote.from.length) return false;
-        switch (quote.type) {
-          case 'hitokoto':
-            return quote.content.is_dialog;
-          default:
-            return true;
+      getQuoteInfo(quote) {
+        const items = [];
+        items.push(['ID', quote.id]);
+        items.push(['创建时间', quote.creation_time]);
+        items.push(['最后更新', quote.update_time]);
+        if (quote.from.length) items.push(['来源', quote.from.join(', ')]);
+        items.push(['提供者', quote.provider.username]);
+        if (quote.type === 'image') {
+          const [md5, ext] = quote.content.filename.split('.');
+          items.push(['文件类型', ext.toUpperCase()]);
+          items.push(['文件大小', formatSize(quote.content.size, 2)]);
+          items.push(['MD5', md5]);
         }
+        return items.map(([name, value]) => `${name}：${value}`).join('\n');
       },
 
-      loadHandler(quotes) {
-        quotes.sort((a, b) => b.id - a.id);
+      loadHandler(quotes, paginate) {
         this.quotes = quotes;
+        this.paginate = paginate;
       },
 
-      reloadList() {
+      reloadList(pageIndex) {
+        if (pageIndex === true) {
+          pageIndex = 1;
+        } else if (pageIndex === false) {
+          pageIndex = this.paginate.currPage;
+        }
         this.pendAction('load', () =>
           new Promise((resolve, reject) => {
-            $.get('/api/quote/list', resp => {
+            const url = new URL('/api/quote/list', location.href);
+            url.searchParams.set('p', pageIndex);
+            url.searchParams.set('c', this.cardsPerPage);
+            $.get(url.href, resp => {
               if (resp.error) {
                 reject(resp.error);
               } else {
-                resolve(resp.result);
+                this.loadHandler(resp.result, resp.paginate);
+                resolve();
               }
             }).fail(reject);
           })
         );
+      },
+
+      navigate(pageIndex) {
+        if (!this.paginate) return;
+        if (pageIndex < 1 || pageIndex > this.paginate.pageCnt) return;
+        if (pageIndex === this.paginate.currPage) return;
+        this.reloadList(pageIndex);
       },
 
       showEdit(quote) {
@@ -468,7 +566,11 @@
                 reject(resp.error);
               } else {
                 this.$refs.modalEdit.hide();
-                resolve(resp.result);
+                if (resp.result && resp.result.length) {
+                  this.showMessage(resp.result.join('\n'), '上传结果', '');
+                }
+                this.reloadList(true);
+                resolve();
               }
             }).fail(reject);
           });
@@ -487,7 +589,8 @@
                 reject(resp.error);
               } else {
                 this.$refs.modalDelete.hide();
-                resolve(resp.result);
+                this.reloadList(false);
+                resolve();
               }
             }).fail(reject);
           });
@@ -495,7 +598,7 @@
       },
 
       showStatistics() {
-        return this.showError('咕咕咕');
+        return this.showMessage('咕咕咕', '咕咕咕');
         let details = new Map(), summary = new QuoteStat;
         for (let quote of this.filteredQuotes) {
           let detail = details.get(quote.from);
