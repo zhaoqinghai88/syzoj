@@ -191,8 +191,8 @@ app.get('/api/quote/list', async (req, res) => {
 
     const currPage = parseInt(req.query.p || 1);
     const perPage = parseInt(req.query.c);
-    assert(!isNaN(currPage) && currPage > 0);
-    assert(!isNaN(perPage) && perPage > 0 && perPage <= 50);
+    assert(!Number.isInteger(currPage));
+    assert(!Number.isInteger(perPage) && perPage > 0 && perPage <= 60);
 
     const query = Quote.createQueryBuilder().select();
 

@@ -467,7 +467,7 @@
         if (pageIndex === true) {
           pageIndex = 1;
         } else if (pageIndex === false) {
-          pageIndex = this.paginate.currPage;
+          pageIndex = this.paginate ? this.paginate.currPage : 1;
         }
         this.pendAction('load', () =>
           new Promise((resolve, reject) => {
