@@ -98,7 +98,7 @@
     </div>
 
     <div v-if="quotes.length" class="ui cards" :class="containerClassName">
-      <div class="ui card" v-for="quote of quotes">
+      <div class="ui card" v-for="quote of quotes" :key="quote.id">
         <template v-if="quote.type === 'hitokoto'">
           <quote-content class="hitokoto content" :quote="quote"></quote-content>
         </template>
