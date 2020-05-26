@@ -41,7 +41,7 @@
                 </div>
             </div>
             <% if (syzoj.config.custom_hitokoto && syzoj.config.custom_hitokoto.enabled && user) { %>
-                <h4 class="ui top attached block header">名言警句</h4>
+                <h4 class="ui top attached block header"><%= syzoj.config.custom_hitokoto.title %></h4>
                 <div id="quote-container" class="ui bottom attached segment">
                     <quote-container url="<%= syzoj.utils.makeUrl(['api', 'quote'], { from: show_user.username }) %>" is-custom></quote-container>
                 </div>
