@@ -65,9 +65,63 @@
       <a class="ui small blue button" :class="getActionClass('load')" @click="reloadList(false)">
         <i class="redo icon"></i> 刷新列表
       </a>
-      <a class="ui small teal button" @click="showStatistics">
-        <i class="info icon"></i> 统计信息
-      </a>
+    </div>
+    
+    <div ref="filterBox" class="ui fluid styled accordion" style="margin-bottom: 1em;">
+      <div class="title">
+        <i class="dropdown icon"></i>
+        更多
+      </div>
+      <div class="content">
+        <div class="ui form">
+          <div class="fields">
+            <div class="field">
+              <label>每行显示条数</label>
+              <ui-select
+                :items="[1, 2, 3, 4, 5]"
+                value-type="number"
+                v-model="cardsEachRow"
+                @change="reloadList(true, true)"
+              ></ui-select>
+            </div>
+            <div class="field">
+              <label>每页显示行数</label>
+              <ui-select
+                :items="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+                value-type="number"
+                v-model="rowsPerPage"
+                @change="reloadList(true, true)"
+              ></ui-select>
+            </div>
+            <div class="field">
+              <label>语录类型</label>
+              <ui-select
+                :items="[
+                  { text: '不限', value: '' },
+                  { text: '一言', value: 'hitokoto' },
+                  { text: '图片', value: 'image' }
+                ]"
+                clearable
+                v-model="filters.type"
+              ></ui-select>
+            </div>
+            <div class="field">
+              <label>语录来源</label>
+              <input type="text" placeholder="不限" v-model="filters.from">
+            </div>
+            <div class="field">
+              <label>操作</label>
+              <div class="ui primary button" @click="reloadList(true, true)">
+                <i class="filter icon"></i>
+                筛选
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="paginate && paginate.total">
+          <p>一共找到了 {{ paginate.total }} 条语录。</p>
+        </div>
+      </div>
     </div>
 
     <div class="pagination-container" v-if="paginate && paginate.pageCnt > 1">
@@ -248,35 +302,7 @@
         <div class="ui positive button" :class="getActionClass('delete')">确定</div>
       </template>
     </ui-modal>
-
-    <ui-modal ref="modalStat" scrolling closable auto-close>
-      <template #header>统计信息</template>
-      <table v-if="stat" class="ui center aligned celled table">
-        <thead>
-          <tr>
-            <th>来源</th>
-            <th>总数</th>
-            <th>文件大小</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="detail in stat.details">
-            <td>{{ detail.from }}</td>
-            <td>{{ detail.count }}</td>
-            <td>{{ formatSize(detail.size, 2) }}</td>
-          </tr>
-          <tr>
-            <td>总计</td>
-            <td>{{ stat.summary.count }}</td>
-            <td>{{ formatSize(stat.summary.size, 2) }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <template #actions>
-        <div class="ui positive button">确定</div>
-      </template>
-    </div>
-  </ui-modal>
+  </div>
 </div>
 
 <script src="<%- syzoj.utils.makeUrl(['cdnjs', `vue/2.6.11/vue.${syzoj.production ? 'min.js' : 'js'}`]) %>"></script>
@@ -296,23 +322,6 @@
   }
   Vue.prototype.formatSize = formatSize;
 
-  class QuoteStat {
-    constructor() {
-      this.count = 0;
-      this.size = 0;
-    }
-    append(quote) {
-      this.count += 1;
-      this.size += quote.size;
-    }
-    toPlain() {
-      return {
-        count: this.count,
-        size: this.size
-      };
-    }
-  }
-
   $.ajaxSetup({
     contentType: 'application/json; charset=utf-8',
     dataType: 'json'
@@ -324,20 +333,23 @@
       userId: <%= user.id %>,
       allowedManage: <%- JSON.stringify(!!allowedManage) %>,
       pending: {
-        load: false,
-        edit: false,
-        delete: false
+        load: null,
+        edit: null,
+        delete: null
       },
       message: {
         title: null,
         content: null
+      },
+      filters: {
+        type: '',
+        from: ''
       },
       paginate: null,
       quotes: [],
       quoteToPreview: null,
       quoteToEdit: null,
       quoteToDelete: null,
-      stat: null,
       cardsEachRow: 4,
       rowsPerPage: 4,
       maxPaginateItems: 15,
@@ -350,6 +362,7 @@
           selectOnKeydown: false,
           action: 'hide'
         });
+        $(this.$refs.filterBox).accordion();
 
         this.reloadList(true);
         
@@ -414,9 +427,7 @@
         this.$refs.modalMessage.show();
       },
 
-      async pendAction(name, callback) {
-        if (this.pending[name]) return;
-        this.pending[name] = true;
+      async performAction(name, callback) {
         try {
           await callback();
         } catch (err) {
@@ -429,9 +440,18 @@
             message = err;
           }
           this.showMessage(message || '未知错误', '好像哪里有点问题');
-        } finally {
-          this.pending[name] = false;
         }
+      },
+
+      pendAction(name, callback) {
+        const current = async () => {
+          await this.pending[name];
+          await this.performAction(name, callback);
+          if (this.pending[name] === current)
+            this.pending[name] = null;
+        };
+        this.pending[name] = current;
+        return current();
       },
 
       getActionClass(name) {
@@ -458,12 +478,12 @@
         return items.map(([name, value]) => `${name}：${value}`).join('\n');
       },
 
-      loadHandler(quotes, paginate) {
-        this.quotes = quotes;
-        this.paginate = paginate;
+      loadHandler(resp) {
+        this.quotes = resp.result;
+        this.paginate = resp.paginate;
       },
 
-      reloadList(pageIndex) {
+      reloadList(pageIndex, clearList) {
         if (pageIndex === true) {
           pageIndex = 1;
         } else if (pageIndex === false) {
@@ -471,14 +491,20 @@
         }
         this.pendAction('load', () =>
           new Promise((resolve, reject) => {
+            if (clearList === true) {
+              this.quotes = [];
+              this.paginate = null;
+            }
             const url = new URL('/api/quote/list', location.href);
             url.searchParams.set('p', pageIndex);
             url.searchParams.set('c', this.cardsPerPage);
+            url.searchParams.set('type', this.filters.type);
+            url.searchParams.set('from', this.filters.from);
             $.get(url.href, resp => {
               if (resp.error) {
                 reject(resp.error);
               } else {
-                this.loadHandler(resp.result, resp.paginate);
+                this.loadHandler(resp);
                 resolve();
               }
             }).fail(reject);
@@ -595,26 +621,6 @@
             }).fail(reject);
           });
         });
-      },
-
-      showStatistics() {
-        return this.showMessage('咕咕咕', '咕咕咕');
-        let details = new Map(), summary = new QuoteStat;
-        for (let quote of this.filteredQuotes) {
-          let detail = details.get(quote.from);
-          if (!detail) {
-            details.set(quote.from, detail = new QuoteStat);
-          }
-          detail.append(quote);
-          summary.append(quote);
-        }
-        this.stat = {
-          details: Array.from(details)
-            .map(([from, detail]) => ({ from, ...detail.toPlain() }))
-            .sort(({count: a}, {count: b}) => (a < b) - (a > b)),
-          summary: summary.toPlain()
-        };
-        $('#modal-stat').modal('show');
       }
     }
   });

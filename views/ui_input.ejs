@@ -7,15 +7,6 @@
   </select>
 </script>
 
-<!--
-<div class="ui search selection dropdown">
-  <i class="dropdown icon"></i>
-  <div class="default text">
-    <slot></slot>
-  </div>
-</div>
--->
-
 <script id="uiCheckboxTemplate" type="text/x-template">
   <div class="ui checkbox">
     <input type="checkbox" :checked="checked">
@@ -23,6 +14,19 @@
       <slot></slot>
     </label>
   </div>
+</script>
+
+<script id="uiSelectTemplate" type="text/x-template">
+  <select ref="select" class="ui dropdown">
+    <option
+      v-for="(item, index) of processedItems"
+      :key="item.value"
+      :value="item.value"
+      :selected="value === item.value"
+    >
+      {{ item.text }}
+    </option>
+  </select>
 </script>
 
 <script>
@@ -97,6 +101,60 @@
       isChecked() {
         return this.$input.checkbox('is checked');
       }
+    }
+  });
+
+  Vue.component('ui-select', {
+    template: '#uiSelectTemplate',
+    props: {
+      items: {
+        type: Array
+      },
+      value: {
+        type: [String, Number]
+      },
+      valueType: {
+        type: String,
+        default: 'string'
+      },
+      clearable: {
+        type: Boolean,
+        default: false
+      }
+    },
+    model: {
+      prop: 'value',
+      event: 'change'
+    },
+    computed: {
+      $sel() {
+        return $(this.$refs.select);
+      },
+      processedItems() {
+        return this.items.map(item => {
+          if (typeof item === 'object') {
+            return item;
+          } else {
+            return { text: item.toString(), value: item };
+          }
+        });
+      }
+    },
+    mounted() {
+      $(() => {
+        const process = value => {
+          switch (this.valueType) {
+            case 'number':
+              return parseInt(value);
+            default:
+              return value;
+          }
+        };
+        this.$sel.dropdown({
+          clearable: this.clearable,
+          onChange: value => this.$emit('change', process(value))
+        });
+      });
     }
   });
 </script>

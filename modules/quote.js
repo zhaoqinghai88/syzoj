@@ -243,7 +243,10 @@ app.get('/api/quote/list', async (req, res) => {
 
     res.send({
       error: null,
-      paginate: paginate.toJSON(),
+      paginate: {
+        ...paginate.toJSON(),
+        total: count
+      },
       result
     });
   } catch (e) {
