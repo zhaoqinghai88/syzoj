@@ -330,6 +330,8 @@ app.post('/api/quote/:id/edit', app.multer.array('files'), async (req, res) => {
               results.push(`${file.originalname} 上传失败：${err.message}`);
             }
           }
+        } else {
+          quotes.push(await findQuoteOrCreate());
         }
         break;
     }
