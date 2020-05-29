@@ -7,9 +7,9 @@ Array.prototype.filterAsync = async function (fn) {
   return this.filter((x, i) => a[i]);
 };
 
-global.ErrorMessage = class ErrorMessage {
+global.ErrorMessage = class ErrorMessage extends Error {
   constructor(message, nextUrls, details) {
-    this.message = message;
+    super(message);
     this.nextUrls = nextUrls || {};
     this.details = details;
   }
@@ -131,9 +131,6 @@ module.exports = {
     if (encoded) res += '?' + encoded;
     return res;
   },
-  makeQuoteUrl(by, filename) {
-    return this.makeUrl(['quote', encodeURIComponent(by), encodeURIComponent(filename)]);
-  },
   highlight(code, lang) {
     return new Promise((resolve, reject) => {
       renderer.highlight(code, lang, res => {
@@ -243,14 +240,15 @@ module.exports = {
     let pageCnt = Math.ceil(count / perPage);
     if (currPage > pageCnt) currPage = pageCnt;
 
+    const data = { currPage, perPage, pageCnt };
+
     return {
-      currPage: currPage,
-      perPage: perPage,
-      pageCnt: pageCnt,
+      ...data,
       toSQL: () => {
         if (!pageCnt) return '';
         else return ` LIMIT ${(currPage - 1) * perPage},${perPage}`
-      }
+      },
+      toJSON: () => ({ ...data })
     };
   },
   paginateFast(currPageTop, currPageBottom, perPage) {
@@ -354,5 +352,8 @@ module.exports = {
     let result = this.striEquals(req.body[field], req.session.captcha);
     req.session.captcha = null;
     return result;
+  },
+  assert(flag, message = "参数错误") {
+    if (!flag) throw new ErrorMessage(message);
   }
 };

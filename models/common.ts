@@ -24,9 +24,11 @@ const caches: Map<string, LRUCache<number, Model>> = new Map();
 
 function ensureCache(modelName) {
   if (!caches.has(modelName)) {
-    caches.set(modelName, new LRUCache({
-      max: syzoj.config.db.cache_size
-    }));
+    const options: any = {};
+    if (!['problem_tag', 'quote'].includes(modelName)) {
+      options.max = syzoj.config.db.cache_size;
+    }
+    caches.set(modelName, new LRUCache(options));
   }
 
   return caches.get(modelName);
@@ -46,6 +48,7 @@ function cacheSet(modelName, id, data) {
 
 export default class Model extends TypeORM.BaseEntity {
   static cache = false;
+  static cacheAll = false;
   static allCached = false;
 
   static async findById<T extends TypeORM.BaseEntity>(this: TypeORM.ObjectType<T>, id?: number): Promise<T | undefined> {
@@ -70,15 +73,17 @@ export default class Model extends TypeORM.BaseEntity {
   static async findAll(): Promise<TypeORM.BaseEntity[]> {
     const doQuery = () => this.find();
 
-    if ((this as typeof Model).cache) {
+    if ((this as typeof Model).cacheAll) {
       if (!this.allCached) {
-        let entities = await doQuery();
-        for (let entity of entities) {
-          cacheSet(this.name, (entity as any).id, entity);
+        const entities = await doQuery();
+        for (const entity of entities) {
+          cacheSet(this.name, (entity as any).id, entity.toPlain());
         }
         this.allCached = true;
       }
-      return ensureCache(this.name).values().filter(x => !!x);
+
+      const resultObjects = ensureCache(this.name).values().filter(x => !!x);
+      return resultObjects.map(resultObject => (this as typeof Model).create(resultObject));
     } else {
       return await doQuery();
     }

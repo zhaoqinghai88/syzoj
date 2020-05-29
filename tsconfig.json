@@ -6,6 +6,7 @@
         "outDir": "./models-built",
         "rootDir": "./models",
         "emitDecoratorMetadata": true,
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "target": "ESNext"
     }
 }

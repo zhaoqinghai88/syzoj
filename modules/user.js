@@ -45,6 +45,27 @@ app.get('/find_user', async (req, res) => {
   }
 });
 
+app.get('/api/user/search', async (req, res) => {
+  try {
+    const users = await User.createQueryBuilder()
+      .where("username LIKE :name", {
+        name: '%' + (req.query.q || '') + '%'
+      })
+      .limit(5)
+      .getMany();
+    
+      res.send({
+        error: null,
+        data: users.map(({ id, username }) => ({ id, username }))
+      });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});
+
 // Login
 app.get('/login', async (req, res) => {
   if (res.locals.user) {

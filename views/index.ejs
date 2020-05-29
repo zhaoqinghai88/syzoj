@@ -1,6 +1,11 @@
 <% this.title = '首页'; %>
 <% include header %>
 <% include util %>
+
+<script src="<%- lib('vue/2.5.21/vue.min.js') %>"></script>
+<% include quote_content %>
+<% include quote_container %>
+
 <div class="padding">
   <div class="ui three column grid">
     <div class="eleven wide column">
@@ -15,10 +20,10 @@
           </thead>
           <tbody>
             <% for (let item of notices) { %>
-                <tr>
-                    <td><a href="<%= item.url %>"><%= item.title %></a></td>
-                    <td><%= item.date %></td>
-                </tr>
+              <tr>
+                <td><a href="<%= item.url %>"><%= item.title %></a></td>
+                <td><%= item.date %></td>
+              </tr>
             <% } %>
           </tbody>
         </table>
@@ -47,11 +52,9 @@
           })();
           </script>
           <tbody>
-            <%
-            let i = 0;
-            for (let user of ranklist) {
-              ++i;
-            %>
+            <% let i = 0; %>
+            <% for (let user of ranklist) { %>
+              <% ++i; %>
                 <tr>
                     <td><b><%= i %></b></td>
                     <td><a href="<%= syzoj.utils.makeUrl(['user', user.id]) %>"><%= user.username %></a><% if (user.nameplate) { %><%- user.nameplate %><% } %></td>
@@ -71,8 +74,7 @@
                       </script>
                     </td>
                 </tr>
-             <%
-            } %>
+            <% } %>
           </tbody>
         </table>
         <% } else { %>
@@ -81,30 +83,20 @@
       </div>
     </div>
     <div class="right floated five wide column side_bar">
-        <h4 class="ui top attached block header"><i class="ui quote left icon"></i><%= syzoj.config.custom_hitokoto.title %></h4>
-        <div class="ui bottom attached center aligned segment">
-          <div class="ui active centered inline loader" id="hitokoto-loader"></div>
-          <%
-            let showCustomHitokoto = user && syzoj.config.custom_hitokoto.enabled;
-            let hitokotoUrl = showCustomHitokoto ? "/api/hitokoto" : "https://v1.hitokoto.cn/?c=a";
-          %>
-          <script>
-          $.get(<%- JSON.stringify(hitokotoUrl) %>, function (data) {
-            if (typeof data === 'string') data = JSON.parse(data);
-            if (data.error) {
-              console.log(data.error);
-              return;
-            }
-            $('#hitokoto-loader').removeClass('active');
-            $('#hitokoto-content').css('display', '').<%- showCustomHitokoto ? 'html' : 'text' %>(data.hitokoto);
-            if (data.from) {
-              $('#hitokoto-from').css('display', '').text('——' + data.from);
-            }
-          }, 'json');
-          </script>
-          <div style="font-size: 1em; line-height: 1.5em; display: none; " id="hitokoto-content"></div>
-          <div style="text-align: right; margin-top: 15px; font-size: 0.9em; color: #666; display: none; " id="hitokoto-from"></div>
+        <%
+          let showCustomHitokoto = user && syzoj.config.custom_hitokoto.enabled;
+          let hitokotoTitle = showCustomHitokoto ? syzoj.config.custom_hitokoto.title : syzoj.config.custom_hitokoto.title_original;
+          let hitokotoUrl = showCustomHitokoto ? syzoj.utils.makeUrl(['api', 'quote']) : 'https://v1.hitokoto.cn/?c=a';
+        %>
+        <h4 class="ui top attached block header"><i class="ui quote left icon"></i><%= hitokotoTitle %></h4>
+        <div id="quote-container" class="ui bottom attached segment">
+          <quote-container url="<%= hitokotoUrl %>" :is-custom="<%= JSON.stringify(showCustomHitokoto) %>"></quote-container>
         </div>
+        <script>
+          let appHitokoto = new Vue({
+            el: '#quote-container'
+          });
+        </script>
       <h4 class="ui top attached block header"><i class="ui rss icon"></i>最近更新</h4>
       <div class="ui bottom attached segment">
 	<table class="ui very basic center aligned table">
@@ -115,9 +107,7 @@
             </tr>
 	  </thead>
 	  <tbody>
-	    <%
-	    for (let problem of problems) {
-	    %>
+	    <% for (let problem of problems) { %>
 	    <tr>
 	      <td><a href="<%= syzoj.utils.makeUrl(['problem', problem.id]) %>"><%= problem.title %></a></td>
 	      <td><%= problem.time %></td>
@@ -228,9 +218,8 @@
         });
       </script>
       <% } %>
-        <%
-        if (fortune) {
-            let color;
+        <% if (fortune) { %>
+        <%  let color;
             if (fortune.fortune.indexOf('吉') != -1) color = '#0ccf00';
             else if (fortune.fortune.indexOf('凶') != -1) color = '#f25e65';
             else color = '#444';
@@ -306,8 +295,8 @@
             </tr>
           </thead>
           <tbody>
+            <% for (let contest of contests) { %>
             <%
-            for (let contest of contests) {
               let now = syzoj.utils.getCurrentDate();
               let tag = '';
             %>
@@ -340,6 +329,7 @@
     </div>
   </div>
 </div>
+
 <script>
 $(function () {
   $('.ui.search').search({

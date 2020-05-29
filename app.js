@@ -162,7 +162,7 @@ global.syzoj = {
     const modelsPath = __dirname + '/models/';
     const modelsBuiltPath = __dirname + '/models-built/';
     const models = fs.readdirSync(modelsPath)
-                     .filter(filename => filename.endsWith('.ts') && filename !== 'common.ts')
+                     .filter(filename => filename.endsWith('.ts') && !['common.ts', 'interfaces.ts'].includes(filename))
                      .map(filename => require(modelsBuiltPath + filename.replace('.ts', '.js')).default);
 
     await TypeORM.createConnection({

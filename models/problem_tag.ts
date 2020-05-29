@@ -4,6 +4,7 @@ import Model from "./common";
 @TypeORM.Entity()
 export default class ProblemTag extends Model {
   static cache = true;
+  static cacheAll = true;
 
   @TypeORM.PrimaryGeneratedColumn()
   id: number;
