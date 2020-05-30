@@ -250,7 +250,7 @@ app.get('/api/quote/list', async (req, res) => {
             .addSelect('COUNT(*)', 'vote_count')
             .where('vote = 1')
             .groupBy('quote_id'),
-            'v', 'v.quote_id = quote.id')
+            'v', 'v.quote_id = id')
           .addSelect('vote_count')
           .orderBy('vote_count', 'DESC');
       } else {
