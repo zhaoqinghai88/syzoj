@@ -219,12 +219,14 @@ app.get('/api/quote/list', async (req, res) => {
       }
 
       if (provider && allowedManage) {
-        assert(syzoj.utils.isValidUsername(provider), "来源名字过于奇怪");
         const user = /^[0-9]+$/.test(provider)
           ? await User.findById(provider)
           : await User.fromName(provider);
-        assert(user, "用户不存在");
-        setWhere('provider_id = :id', { id: user.id });
+        if (user) {
+          setWhere('provider_id = :id', { id: user.id });
+        } else {
+          setWhere('FALSE');
+        }
       }
 
       if (type) {
