@@ -114,7 +114,8 @@
                 type="text"
                 placeholder="不限"
                 v-model="filters.from"
-                @input="scheduleReload(500, true, true)"
+                @input="scheduleReload()"
+                @change="scheduleReload(true)"
               >
             </div>
             <div v-if="allowedManage" class="field">
@@ -123,7 +124,8 @@
                 type="text"
                 placeholder="不限"
                 v-model="filters.provider"
-                @input="scheduleReload(500, true, true)"
+                @input="scheduleReload()"
+                @change="scheduleReload(true)"
               >
             </div>
             <div class="field">
@@ -357,6 +359,7 @@
     data: {
       userId: <%= user.id %>,
       allowedManage: <%- JSON.stringify(!!allowedManage) %>,
+      usernameRegex: new RegExp(<%- JSON.stringify(syzoj.config.username_regex) %>),
       pending: {
         load: null,
         edit: null,
@@ -368,6 +371,11 @@
         content: null
       },
       filters: {
+        type: '',
+        from: '',
+        provider: ''
+      },
+      lastFilters: {
         type: '',
         from: '',
         provider: ''
@@ -542,18 +550,46 @@
                 resolve();
               }
             }).fail(reject);
+            this.updateFilters();
           })
         );
       },
 
-      scheduleReload(delay, ...arg) {
+      isValidUsername(username) {
+        return this.usernameRegex.test(username);
+      },
+
+      compareFilters() {
+        for (const key in this.filters) {
+          if (this.filters[key] !== this.lastFilters[key]) return false;
+        }
+        return true;
+      },
+
+      checkFilters() {
+        if (this.compareFilters()) return false;
+        if (this.filters.from && !this.isValidUsername(this.filters.from)) return false;
+        if (this.filters.provider && !this.isValidUsername(this.filters.provider)) return false;
+        return true;
+      },
+
+      updateFilters() {
+        for (const key in this.filters) {
+          this.lastFilters[key] = this.filters[key];
+        }
+      },
+
+      scheduleReload(now) {
         if (this.reloadTimer) {
           clearTimeout(this.reloadTimer);
-        }
-        this.reloadTimer = setTimeout(() => {
           this.reloadTimer = null;
-          this.reloadList(...arg);
-        }, delay);
+        }
+        if (this.checkFilters()) {
+          this.reloadTimer = setTimeout(() => {
+            this.reloadTimer = null;
+            this.reloadList(true, true);
+          }, now ? 0 : 666);
+        }
       },
 
       navigate(pageIndex) {

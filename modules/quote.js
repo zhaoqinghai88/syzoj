@@ -214,8 +214,8 @@ app.get('/api/quote/list', async (req, res) => {
       let { type, from, provider, sort } = req.query;
 
       if (!allowedManage) {
-        setWhere('(provider_id = :id OR id IN (SELECT DISTINCT quote_id AS id FROM quote_from WHERE `from` = :from))',
-          { id: user.id, from: user.username });
+        setWhere('(provider_id = :user_id OR id IN (SELECT DISTINCT quote_id AS id FROM quote_from WHERE `from` = :username))',
+          { user_id: user.id, username: user.username });
       }
 
       if (provider && allowedManage) {
@@ -223,7 +223,7 @@ app.get('/api/quote/list', async (req, res) => {
           ? await User.findById(provider)
           : await User.fromName(provider);
         if (user) {
-          setWhere('provider_id = :id', { id: user.id });
+          setWhere('provider_id = :provider_id', { provider_id: user.id });
         } else {
           setWhere('FALSE');
         }
@@ -236,7 +236,7 @@ app.get('/api/quote/list', async (req, res) => {
 
       if (from) {
         assert(typeof from === 'string' && syzoj.utils.isValidUsername(from), "来源名字过于奇怪");
-        setWhere('id IN (SELECT DISTINCT quote_id AS id FROM quote_from WHERE `from` = :from)', { from });
+        setWhere('(id IN (SELECT DISTINCT quote_id AS id FROM quote_from WHERE `from` = :from))', { from });
       }
 
       if (sort) {
