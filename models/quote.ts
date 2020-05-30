@@ -8,7 +8,7 @@ import { QuoteType, HitokotoQuoteContent, ImageQuoteContent, QuoteVoteSummary, Q
 import * as fs from "fs-extra";
 import * as pathlib from "path";
 
-declare var syzoj, ErrorMessage: any;
+declare var syzoj: any;
 
 const assert: (flag: any, message?: string) => void = syzoj.utils.assert;
 
@@ -16,6 +16,12 @@ function exists(path: string): Promise<boolean> {
   return new Promise(resolve => {
     fs.access(path, fs.constants.F_OK, err => resolve(!err));
   });
+}
+
+interface LeaderBoardItem {
+  from: string;
+  quote_count: number;
+  vote_up_sum: number;
 }
 
 @TypeORM.Entity()
@@ -110,6 +116,35 @@ export default class Quote extends Model {
     return quotes[quotes.length - 1];
   }
 
+  static async getLeaderboards(): Promise<LeaderBoardItem[]> {
+    const query = QuoteFrom.createQueryBuilder()
+      .select('`from`')
+      .addSelect('COUNT(*)', 'quote_count')
+      .addSelect('SUM(vote_up)', 'vote_up_sum')
+      .leftJoin(qb => {
+        return qb.from(Quote, "quote")
+          .select(["id", "vote_up"])
+          .leftJoin(qb => {
+            return qb.from(QuoteUserVote, "quote_user_vote")
+              .select("quote_id")
+              .addSelect("COUNT(*)", "vote_up")
+              .where("vote = 1")
+              .groupBy("quote_id");
+          }, "v", "v.quote_id = id");
+      }, "q", "q.id = quote_id")
+      .groupBy("`from`")
+      .orderBy("quote_count", "DESC")
+      .addOrderBy("vote_up_sum", "DESC");
+
+    const results = await query.getRawMany();
+
+    return results.map(item => ({
+      from: item.from,
+      quote_count: parseInt(item.quote_count),
+      vote_up_sum: parseInt(item.vote_up_sum || 0)
+    }));
+  }
+
   async getVoteBy(user: User): Promise<QuoteUserVote> {
     return await QuoteUserVote.findOne({
       where: {
@@ -184,9 +219,7 @@ export default class Quote extends Model {
     const backupPath = Quote.getBackupSavePath(filename);
 
     await syzoj.utils.lock(['Quote::Image'], async () => {
-      if (await exists(savePath)) {
-        throw new ErrorMessage("图片已存在");
-      }
+      assert(!await exists(savePath), "图片已存在");
       await fs.rename(file.path, savePath);
       try {
         await fs.unlink(backupPath);

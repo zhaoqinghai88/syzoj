@@ -403,3 +403,38 @@ app.post('/api/quote/:id/delete', async (req, res) => {
     });
   }
 });
+
+app.get('/api/quote/leaderboards', async (req, res) => {
+  try {
+    const { user } = res.locals;
+
+    res.send({
+      error: null,
+      result: await Quote.getLeaderboards()
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});
+
+app.get('/api/quote/contributions', async (req, res) => {
+  try {
+    const { user } = res.locals;
+    const allowedManage = await user.hasPrivilege('manage_quote');
+    assert(allowedManage, "您没有权限执行此操作");
+
+    assert(false, "not implemented");
+
+    res.send({
+      error: null
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});

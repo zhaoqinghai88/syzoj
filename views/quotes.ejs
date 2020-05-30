@@ -65,6 +65,9 @@
       <a class="ui small blue button" :class="getActionClass('load')" @click="reloadList(false)">
         <i class="redo icon"></i> 刷新列表
       </a>
+      <a class="ui small teal button" :class="getActionClass('leaderboards')" @click="showLeaderboards()">
+        <i class="chart bar icon"></i> 排行榜
+      </a>
     </div>
     
     <div ref="filterBox" class="ui fluid styled accordion" style="margin-bottom: 1em;">
@@ -329,6 +332,31 @@
         <div class="ui positive button" :class="getActionClass('delete')">确定</div>
       </template>
     </ui-modal>
+
+    <ui-modal ref="modalLeaderboards" scrolling closable auto-close>
+      <template #header>排行榜</template>
+      <table v-if="leaderboards" class="ui very basic center aligned table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>来源</th>
+            <th>语录数量</th>
+            <th>点赞总数</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item, index) of leaderboards">
+            <td><div :class="getRankClass(index + 1)">{{ index + 1 }}</div></td>
+            <td>{{ item.from }}</td>
+            <td>{{ item.quote_count }}</td>
+            <td>{{ item.vote_up_sum }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <template #actions>
+        <div class="ui positive button">关闭</div>
+      </template>
+    </ui-modal>
   </div>
 </div>
 
@@ -363,7 +391,8 @@
       pending: {
         load: null,
         edit: null,
-        delete: null
+        delete: null,
+        leaderboards: null
       },
       reloadTimer: null,
       message: {
@@ -389,7 +418,8 @@
       cardsEachRow: 4,
       rowsPerPage: 4,
       maxPaginateItems: 15,
-      pagniate: null
+      pagniate: null,
+      leaderboards: null
     },
 
     mounted() {
@@ -701,6 +731,28 @@
             }).fail(reject);
           });
         });
+      },
+
+      getRankClass(rank) {
+        if (rank === 1) return 'ui yellow ribbon label';
+        if (rank === 2) return 'ui ribbon label';
+        if (rank === 3) return 'ui brown ribbon label';
+        return '';
+      },
+
+      showLeaderboards() {
+        this.pendAction('leaderboards', () =>
+          new Promise((resolve, reject) => {
+            $.get('/api/quote/leaderboards', resp => {
+              if (resp.error) {
+                reject(resp.error);
+              } else {
+                this.leaderboards = resp.result;
+                this.$refs.modalLeaderboards.show();
+                resolve();
+              }
+            }).fail(reject)
+          }));
       }
     }
   });
