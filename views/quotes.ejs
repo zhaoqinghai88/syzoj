@@ -341,15 +341,15 @@
             <th>#</th>
             <th>来源</th>
             <th>语录数量</th>
-            <th>点赞总数</th>
+            <th>点赞总数 / 平均数</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, index) of leaderboards">
-            <td><div :class="getRankClass(index + 1)">{{ index + 1 }}</div></td>
+          <tr v-for="item of leaderboards">
+            <td><div :class="getRankClass(item.rank)">{{ item.rank }}</div></td>
             <td>{{ item.from }}</td>
             <td>{{ item.quote_count }}</td>
-            <td>{{ item.vote_up_sum }}</td>
+            <td>{{ item.vote_up_sum }} / {{ (item.vote_up_sum / item.quote_count).toFixed(2) }}</td>
           </tr>
         </tbody>
       </table>
@@ -747,11 +747,17 @@
               if (resp.error) {
                 reject(resp.error);
               } else {
+                let rank = 0, last = null;
+                for (const item of resp.result) {
+                  if (!last || item.quote_count !== last.quote_count || item.vote_up_sum !== last.vote_up_sum) ++rank;
+                  item.rank = rank;
+                  last = item;
+                }
                 this.leaderboards = resp.result;
                 this.$refs.modalLeaderboards.show();
                 resolve();
               }
-            }).fail(reject)
+            }).fail(reject);
           }));
       }
     }
