@@ -2,6 +2,7 @@
 const fs = require('fs-extra');
 const pathlib = require('path');
 const randomstring = require('randomstring');
+const TypeORM = require('typeorm');
 
 const User = syzoj.model('user');
 const Quote = syzoj.model('quote');
@@ -40,12 +41,15 @@ app.use('/api/quote', (req, res, next) => {
   }
 });
 
-async function processQuote(quote, user, privileged) {
+async function processQuote(quote, user) {
+  const privileged = await quote.isAllowedManageBy(user);
+
   await quote.loadRelationships();
   await quote.render();
 
   return {
     ...quote.toJSON(privileged),
+    privileged,
     vote: await quote.getVoteSummary(user)
   };
 }
@@ -207,18 +211,19 @@ app.get('/api/quote/list', async (req, res) => {
         }
       };
 
-      const { type, from, provider } = req.query;
+      let { type, from, provider, sort } = req.query;
 
-      if (allowedManage) {
-        if (provider) {
-          assert(syzoj.utils.isValidUsername(provider), "来源名字过于奇怪");
-          const user = /^[0-9]+$/.test(provider)
-            ? await User.findById(provider)
-            : await User.fromName(provider);
-          assert(user, "用户不存在");
-          setWhere('provider_id = :id', { id: user.id });
-        }
-      } else {
+      if (!allowedManage) {
+        setWhere('(provider_id = :id OR id IN (SELECT DISTINCT quote_id AS id FROM quote_from WHERE `from` = :from))',
+          { id: user.id, from: user.username });
+      }
+
+      if (provider && allowedManage) {
+        assert(syzoj.utils.isValidUsername(provider), "来源名字过于奇怪");
+        const user = /^[0-9]+$/.test(provider)
+          ? await User.findById(provider)
+          : await User.fromName(provider);
+        assert(user, "用户不存在");
         setWhere('provider_id = :id', { id: user.id });
       }
 
@@ -232,14 +237,34 @@ app.get('/api/quote/list', async (req, res) => {
         setWhere('id IN (SELECT DISTINCT quote_id AS id FROM quote_from WHERE `from` = :from)', { from });
       }
 
-      query.orderBy('update_time', 'DESC');
+      if (sort) {
+        assert(['id', 'creation_time', 'update_time', 'vote.up'].includes(sort));
+      } else {
+        sort = 'id';
+      }
+      if (sort === 'vote.up') {
+        query
+          .leftJoin(qb => qb
+            .from(QuoteUserVote)
+            .select('quote_id')
+            .addSelect('COUNT(*)', 'vote_count')
+            .where('vote = 1')
+            .groupBy('quote_id'),
+            'v', 'v.quote_id = quote.id')
+          .addSelect('vote_count')
+          .orderBy('vote_count', 'DESC');
+      } else {
+        query.orderBy(sort, 'DESC');
+      }
     }
 
     const count = await Quote.countForPagination(query);
     const paginate = syzoj.utils.paginate(count, currPage, perPage);
     const quotes = await Quote.queryPage(paginate, query);
 
-    const result = await Promise.all(quotes.map(quote => processQuote(quote, user, true)));
+    const result = await Promise.all(quotes.map(async quote => {
+      return processQuote(quote, user);
+    }));
 
     res.send({
       error: null,
@@ -289,7 +314,8 @@ app.post('/api/quote/:id/edit', app.multer.array('files'), async (req, res) => {
       } else {
         assert(Number.isSafeInteger(data.id));
         const quote = await Quote.findById(data.id);
-        assert(quote !== null, "语录不存在");
+        assert(quote, "语录不存在");
+        assert(await quote.isAllowedManageBy(user), "不敢乱改语录啊");
         return quote;
       }
     };
@@ -361,8 +387,7 @@ app.post('/api/quote/:id/delete', async (req, res) => {
     const quote = await Quote.findById(req.params.id);
     assert(quote, "这条语录消失了……");
 
-    const allowedManage = await user.hasPrivilege('manage_quote');
-    assert(allowedManage || quote.provider_id === user.id, "不敢乱删语录啊");
+    assert(await quote.isAllowedManageBy(user), "不敢乱删语录啊");
 
     await quote.delete();
 

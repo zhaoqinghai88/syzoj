@@ -71,6 +71,8 @@ export default class User extends Model {
   @TypeORM.Column({ nullable: true, type: "integer" })
   register_time: number;
 
+  privilege_cache?: Map<string, boolean>;
+
   static async fromEmail(email): Promise<User> {
     return User.findOne({
       where: {
@@ -164,17 +166,23 @@ export default class User extends Model {
     this.information = await syzoj.utils.markdown(this.information);
   }
 
-  async getPrivileges() {
+  ensurePrivilegeCache(): Map<string, boolean> {
+    return this.privilege_cache = this.privilege_cache || new Map();
+  }
+
+  async getPrivileges(): Promise<string[]> {
     let privileges = await UserPrivilege.find({
       where: {
         user_id: this.id
       }
     });
 
-    return privileges.map(x => x.privilege);
+    const results = privileges.map(x => x.privilege);
+    this.privilege_cache = new Map(results.map(privilege => [privilege, true]));
+    return results;
   }
 
-  async setPrivileges(newPrivileges) {
+  async setPrivileges(newPrivileges: string[]) {
     let oldPrivileges = await this.getPrivileges();
 
     let delPrivileges = oldPrivileges.filter(x => !newPrivileges.includes(x));
@@ -187,6 +195,7 @@ export default class User extends Model {
       } });
 
       await obj.destroy();
+      this.privilege_cache.set(privilege, false);
     }
 
     for (let privilege of addPrivileges) {
@@ -196,14 +205,18 @@ export default class User extends Model {
       });
 
       await obj.save();
+      this.privilege_cache.set(privilege, true);
     }
   }
 
-  async hasPrivilege(privilege) {
+  async hasPrivilege(privilege): Promise<boolean> {
     if (this.is_admin) return true;
+    if (this.ensurePrivilegeCache().has(privilege)) return this.privilege_cache.get(privilege);
 
-    let x = await UserPrivilege.findOne({ where: { user_id: this.id, privilege: privilege } });
-    return !!x;
+    const x = await UserPrivilege.findOne({ where: { user_id: this.id, privilege: privilege } });
+    const result = !!x;
+    this.privilege_cache.set(privilege, result);
+    return result;
   }
 
   async getLastSubmitLanguage() {

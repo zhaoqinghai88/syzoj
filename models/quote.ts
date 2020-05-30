@@ -68,6 +68,10 @@ export default class Quote extends Model {
     })).map(item => item.from);
   }
 
+  async isAllowedManageBy(user: User): Promise<boolean> {
+    return user && (this.provider_id === user.id || await user.hasPrivilege('manage_quote'));
+  }
+
   static async pickAll(where): Promise<Quote[]> {
     where = where || {};
 

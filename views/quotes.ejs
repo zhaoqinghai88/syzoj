@@ -93,6 +93,8 @@
                 @change="reloadList(true, true)"
               ></ui-select>
             </div>
+          </div>
+          <div class="fields">
             <div class="field">
               <label>语录类型</label>
               <ui-select
@@ -103,18 +105,39 @@
                 ]"
                 clearable
                 v-model="filters.type"
+                @change="reloadList(true, true)"
               ></ui-select>
             </div>
             <div class="field">
               <label>语录来源</label>
-              <input type="text" placeholder="不限" v-model="filters.from">
+              <input
+                type="text"
+                placeholder="不限"
+                v-model="filters.from"
+                @input="scheduleReload(500, true, true)"
+              >
+            </div>
+            <div v-if="allowedManage" class="field">
+              <label>语录提供者</label>
+              <input
+                type="text"
+                placeholder="不限"
+                v-model="filters.provider"
+                @input="scheduleReload(500, true, true)"
+              >
             </div>
             <div class="field">
-              <label>操作</label>
-              <div class="ui primary button" @click="reloadList(true, true)">
-                <i class="filter icon"></i>
-                筛选
-              </div>
+              <label>排序方式</label>
+              <ui-select
+                :items="[
+                  { text: '默认', value: 'id' },
+                  { text: '创建时间', value: 'creation_time' },
+                  { text: '最后更新', value: 'update_time' },
+                  { text: '点赞数', value: 'vote.up' }
+                ]"
+                v-model="sortKey"
+                @change="reloadList(true, true)"
+              ></ui-select>
             </div>
           </div>
         </div>
@@ -169,9 +192,9 @@
             </div>
             <div>
               <i class="clock outline icon"></i>
-              <span>{{ quote.update_time }}</span>
+              <span>{{ quote.creation_time }}</span>
             </div>
-            <div v-if="quote.provider.id !== userId">
+            <div v-if="quote.provider && quote.provider.id !== userId">
               <i class="user outline icon"></i>
               <a style="color: inherit;" :href="'/user/' + quote.provider.id" target="_blank">{{ quote.provider.username }}</a>
             </div>
@@ -194,16 +217,18 @@
               {{ quote.vote.total.down }}
             </span>
             <div class="actions" style="float: right;">
-              <i class="info circle link icon" :title="getQuoteInfo(quote)"></i>
+              <i class="info circle link icon" @click="showQuoteInfo(quote)"></i>
               <a v-if="quote.type === 'image'" @click="previewItem(quote)">
                 <i class="eye icon"></i>
               </a>
-              <a @click="editItem(quote)">
-                <i class="edit icon"></i>
-              </a>
-              <a class="btn-delete" @click="deleteItem(quote)">
-                <i class="trash alternate icon"></i>
-              </a>
+              <template v-if="quote.privileged">
+                <a @click="editItem(quote)">
+                  <i class="edit icon"></i>
+                </a>
+                <a class="btn-delete" @click="deleteItem(quote)">
+                  <i class="trash alternate icon"></i>
+                </a>
+              </template>
             </div>
           </div>
         </div>
@@ -337,14 +362,17 @@
         edit: null,
         delete: null
       },
+      reloadTimer: null,
       message: {
         title: null,
         content: null
       },
       filters: {
         type: '',
-        from: ''
+        from: '',
+        provider: ''
       },
+      sortKey: 'id',
       paginate: null,
       quotes: [],
       quoteToPreview: null,
@@ -468,7 +496,7 @@
         items.push(['创建时间', quote.creation_time]);
         items.push(['最后更新', quote.update_time]);
         if (quote.from.length) items.push(['来源', quote.from.join(', ')]);
-        items.push(['提供者', quote.provider.username]);
+        if (quote.provider) items.push(['提供者', quote.provider.username]);
         if (quote.type === 'image') {
           const [md5, ext] = quote.content.filename.split('.');
           items.push(['文件类型', ext.toUpperCase()]);
@@ -476,6 +504,10 @@
           items.push(['MD5', md5]);
         }
         return items.map(([name, value]) => `${name}：${value}`).join('\n');
+      },
+
+      showQuoteInfo(quote) {
+        this.showMessage(this.getQuoteInfo(quote), '语录信息', 'mini');
       },
 
       loadHandler(resp) {
@@ -500,6 +532,8 @@
             url.searchParams.set('c', this.cardsPerPage);
             url.searchParams.set('type', this.filters.type);
             url.searchParams.set('from', this.filters.from);
+            url.searchParams.set('provider', this.filters.provider);
+            url.searchParams.set('sort', this.sortKey);
             $.get(url.href, resp => {
               if (resp.error) {
                 reject(resp.error);
@@ -510,6 +544,16 @@
             }).fail(reject);
           })
         );
+      },
+
+      scheduleReload(delay, ...arg) {
+        if (this.reloadTimer) {
+          clearTimeout(this.reloadTimer);
+        }
+        this.reloadTimer = setTimeout(() => {
+          this.reloadTimer = null;
+          this.reloadList(...arg);
+        }, delay);
       },
 
       navigate(pageIndex) {
@@ -595,7 +639,7 @@
                 if (resp.result && resp.result.length) {
                   this.showMessage(resp.result.join('\n'), '上传结果', '');
                 }
-                this.reloadList(true);
+                this.reloadList(['update_time'].includes(this.sortKey));
                 resolve();
               }
             }).fail(reject);
