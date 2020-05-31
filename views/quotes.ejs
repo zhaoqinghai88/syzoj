@@ -598,7 +598,7 @@
       checkFilters() {
         if (this.compareFilters()) return false;
         if (this.filters.from && !this.isValidUsername(this.filters.from)) return false;
-        if (this.filters.provider && !this.isValidUsername(this.filters.provider)) return false;
+        if (this.filters.provider && !/^[0-9]+$/.test(this.filters.provider) && !this.isValidUsername(this.filters.provider)) return false;
         return true;
       },
 
