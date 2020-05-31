@@ -135,7 +135,6 @@
               <label>排序方式</label>
               <ui-select
                 :items="[
-                  { text: '默认', value: 'id' },
                   { text: '创建时间', value: 'creation_time' },
                   { text: '最后更新', value: 'update_time' },
                   { text: '点赞数', value: 'vote.up' }
@@ -409,7 +408,7 @@
         from: '',
         provider: ''
       },
-      sortKey: 'id',
+      sortKey: 'creation_time',
       paginate: null,
       quotes: [],
       quoteToPreview: null,

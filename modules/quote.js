@@ -240,9 +240,9 @@ app.get('/api/quote/list', async (req, res) => {
       }
 
       if (sort) {
-        assert(['id', 'creation_time', 'update_time', 'vote.up'].includes(sort));
+        assert(['creation_time', 'update_time', 'vote.up'].includes(sort));
       } else {
-        sort = 'id';
+        sort = 'creation_time';
       }
       if (sort === 'vote.up') {
         query
