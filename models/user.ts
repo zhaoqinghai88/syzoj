@@ -62,6 +62,9 @@ export default class User extends Model {
   @TypeORM.Column({ nullable: true, type: "boolean", default: true })
   auto_spacing_page: boolean;
 
+  @TypeORM.Column({ nullable: true, type: "boolean", default: true })
+  can_see_quote: boolean;
+
   @TypeORM.Column({ nullable: true, type: "integer" })
   sex: number;
 

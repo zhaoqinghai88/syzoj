@@ -12,13 +12,10 @@ const QuoteUserVote = syzoj.model('quote-user-vote');
 const { baseDir, isValidImageExt } = Quote;
 const { assert } = syzoj.utils;
 
-const config = syzoj.config.custom_hitokoto;
-
 syzoj.utils.lock(['Quote::Image'], () => fs.ensureDir(baseDir));
 
 function checkHandler(req, res, next) {
-  assert(config && config.enabled, "这里什么也没有……");
-  assert(res.locals.user, "请先登录");
+  assert(syzoj.utils.allowedSeeingQuote(res.locals.user), "这里什么也没有……");
   next();
 }
 
