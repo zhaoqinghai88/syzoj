@@ -6,9 +6,15 @@ export enum QuoteType {
   image = 'image'
 }
 
+export interface DialogItem {
+  from: string;
+  content: string;
+}
+
 export interface HitokotoQuoteContent {
   hitokoto: string;
   html?: string;
+  dialog?: DialogItem[];
   is_dialog: boolean;
 }
 

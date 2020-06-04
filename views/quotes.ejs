@@ -14,12 +14,16 @@
     text-align: center;
     margin-bottom: 1em;
   }
-  .ui.card > .hitokoto.content {
+  .ui.card {
+    max-height: 25em;
+  }
+  .hitokoto-box, .image-box {
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    max-height: 12em;
-    overflow-y: auto;
+    align-items: center;
   }
   .ui.card > .grow {
     flex-grow: 1 !important;
@@ -29,16 +33,12 @@
   }
   .ui.card > .shrink {
     flex-shrink: 1 !important;
-    overflow: hidden;
   }
-  .ui.card .image-box {
-    width: 100%;
-    height: 100%;
-    max-height: 12em;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+  .ui.card > .no-shrink {
+    flex-shrink: 0 !important;
+  }
+  .ui.card > .grow.shrink {
+    overflow-y: auto;
   }
   .ui.card .actions > .btn-delete:hover {
     color: red !important;
@@ -183,14 +183,16 @@
     <div v-if="quotes.length" class="ui cards" :class="containerClassName">
       <div class="ui card" v-for="quote of quotes" :key="quote.id">
         <template v-if="quote.type === 'hitokoto'">
-          <quote-content class="hitokoto content" :quote="quote"></quote-content>
+          <div class="grow shrink content">
+            <quote-content class="hitokoto-box" :quote="quote"></quote-content>
+          </div>
         </template>
         <template v-if="quote.type === 'image'">
           <div class="grow shrink image">
             <quote-content class="image-box" :quote="quote"></quote-content>
           </div>
         </template>
-        <div class="no-grow content">
+        <div class="no-grow no-shrink content">
           <div class="meta">
             <div>
               <i class="quote left icon"></i>
@@ -212,7 +214,7 @@
             </div>
           </div>
         </div>
-        <div class="extra no-grow content">
+        <div class="extra no-grow no-shrink content">
           <div class="meta">
             <span class="vote" :class="{ active: quote.vote.self === 1 }">
               <i class="thumbs up outline icon"></i>

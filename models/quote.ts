@@ -3,7 +3,7 @@ import Model from "./common";
 import User from "./user";
 import QuoteFrom from "./quote-from";
 import QuoteUserVote from "./quote-user-vote";
-import { QuoteType, HitokotoQuoteContent, ImageQuoteContent, QuoteVoteSummary, QuoteVoteType, UserQuote } from "./interfaces";
+import { QuoteType, HitokotoQuoteContent, ImageQuoteContent, QuoteVoteSummary, QuoteVoteType, UserQuote, DialogItem } from "./interfaces";
 
 import * as fs from "fs-extra";
 import * as pathlib from "path";
@@ -193,7 +193,9 @@ export default class Quote extends Model {
     switch (this.type) {
       case QuoteType.hitokoto: {
         const content = this.content as HitokotoQuoteContent;
-        content.html = await syzoj.utils.markdown(content.hitokoto);
+        if (!content.is_dialog || !await renderDialog(content)) {
+          content.html = await syzoj.utils.markdown(content.hitokoto);
+        }
         break;
       }
 
@@ -298,4 +300,24 @@ export default class Quote extends Model {
     }
     return result;
   }
+}
+
+async function renderDialog(content: HitokotoQuoteContent): Promise<boolean> {
+  let lines = content.hitokoto.split(/  \n|<br>\n|\n\n/);
+  if (lines.length <= 1) return false;
+
+  let items: DialogItem[] = [];
+
+  for (const line of lines) {
+    let result = line.match(/^((.+?)(:|：))(.+)$/);
+    if (!result) return false;
+    items.push({ from: result[1], content: result[4] });
+  }
+
+  await Promise.all(items.map(async item => {
+    item.content = await syzoj.utils.markdown(item.content);
+  }));
+
+  content.dialog = items;
+  return true;
 }
