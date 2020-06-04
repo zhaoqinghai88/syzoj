@@ -303,7 +303,7 @@ export default class Quote extends Model {
 }
 
 async function renderDialog(content: HitokotoQuoteContent): Promise<boolean> {
-  let lines = content.hitokoto.split(/  \n|<br>\n|\n\n/);
+  let lines = content.hitokoto.trim().split(/  \n|<br>\n|\n\n/);
   if (lines.length <= 1) return false;
 
   let items: DialogItem[] = [];
