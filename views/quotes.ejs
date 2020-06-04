@@ -18,12 +18,18 @@
     max-height: 25em;
   }
   .hitokoto-box, .image-box {
-    width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+  }
+  .hitokoto-box {
+    min-width: 100%;
+    width: fit-content;
+  }
+  .image-box {
+    width: 100%;
   }
   .ui.card > .grow {
     flex-grow: 1 !important;
@@ -38,7 +44,7 @@
     flex-shrink: 0 !important;
   }
   .ui.card > .grow.shrink {
-    overflow-y: auto;
+    overflow: auto;
   }
   .ui.card .actions > .btn-delete:hover {
     color: red !important;
