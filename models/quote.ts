@@ -121,7 +121,7 @@ export default class Quote extends Model {
       .select('`from`')
       .addSelect('COUNT(*)', 'quote_count')
       .addSelect('SUM(vote_up)', 'vote_up_sum')
-      .leftJoin(qb => {
+      .innerJoin(qb => {
         return qb.from(Quote, "quote")
           .select(["id", "vote_up"])
           .leftJoin(qb => {
