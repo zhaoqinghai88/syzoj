@@ -14,10 +14,22 @@
     text-align: center;
     margin-bottom: 1em;
   }
-  .ui.card > .hitokoto.content {
+  .ui.card {
+    max-height: 25em;
+  }
+  .hitokoto-box, .image-box {
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
+  }
+  .hitokoto-box {
+    min-width: 100%;
+    width: fit-content;
+  }
+  .image-box {
+    width: 100%;
   }
   .ui.card > .grow {
     flex-grow: 1 !important;
@@ -27,16 +39,12 @@
   }
   .ui.card > .shrink {
     flex-shrink: 1 !important;
-    overflow: hidden;
   }
-  .ui.card .image-box {
-    width: 100%;
-    height: 100%;
-    max-height: 12em;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+  .ui.card > .no-shrink {
+    flex-shrink: 0 !important;
+  }
+  .ui.card > .grow.shrink {
+    overflow: auto;
   }
   .ui.card .actions > .btn-delete:hover {
     color: red !important;
@@ -135,7 +143,6 @@
               <label>排序方式</label>
               <ui-select
                 :items="[
-                  { text: '默认', value: 'id' },
                   { text: '创建时间', value: 'creation_time' },
                   { text: '最后更新', value: 'update_time' },
                   { text: '点赞数', value: 'vote.up' }
@@ -182,14 +189,16 @@
     <div v-if="quotes.length" class="ui cards" :class="containerClassName">
       <div class="ui card" v-for="quote of quotes" :key="quote.id">
         <template v-if="quote.type === 'hitokoto'">
-          <quote-content class="hitokoto content" :quote="quote"></quote-content>
+          <div class="grow shrink content">
+            <quote-content class="hitokoto-box" :quote="quote"></quote-content>
+          </div>
         </template>
         <template v-if="quote.type === 'image'">
           <div class="grow shrink image">
             <quote-content class="image-box" :quote="quote"></quote-content>
           </div>
         </template>
-        <div class="no-grow content">
+        <div class="no-grow no-shrink content">
           <div class="meta">
             <div>
               <i class="quote left icon"></i>
@@ -211,7 +220,7 @@
             </div>
           </div>
         </div>
-        <div class="extra no-grow content">
+        <div class="extra no-grow no-shrink content">
           <div class="meta">
             <span class="vote" :class="{ active: quote.vote.self === 1 }">
               <i class="thumbs up outline icon"></i>
@@ -409,7 +418,7 @@
         from: '',
         provider: ''
       },
-      sortKey: 'id',
+      sortKey: 'creation_time',
       paginate: null,
       quotes: [],
       quoteToPreview: null,
@@ -599,7 +608,7 @@
       checkFilters() {
         if (this.compareFilters()) return false;
         if (this.filters.from && !this.isValidUsername(this.filters.from)) return false;
-        if (this.filters.provider && !this.isValidUsername(this.filters.provider)) return false;
+        if (this.filters.provider && !/^[0-9]+$/.test(this.filters.provider) && !this.isValidUsername(this.filters.provider)) return false;
         return true;
       },
 

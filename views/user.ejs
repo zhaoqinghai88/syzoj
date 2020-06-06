@@ -40,7 +40,7 @@
                     <a style="float: right; "><i class="star icon"></i>积分 <%= show_user.rating %></a>
                 </div>
             </div>
-            <% if (syzoj.config.custom_hitokoto && syzoj.config.custom_hitokoto.enabled && user) { %>
+            <% if (syzoj.utils.allowedSeeingQuote(user)) { %>
                 <h4 class="ui top attached block header"><%= syzoj.config.custom_hitokoto.title %></h4>
                 <div id="quote-container" class="ui bottom attached segment">
                     <quote-container url="<%= syzoj.utils.makeUrl(['api', 'quote'], { from: show_user.username }) %>" is-custom></quote-container>

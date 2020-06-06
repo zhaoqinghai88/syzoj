@@ -355,5 +355,8 @@ module.exports = {
   },
   assert(flag, message = "参数错误") {
     if (!flag) throw new ErrorMessage(message);
+  },
+  allowedSeeingQuote(user) {
+    return syzoj.config.custom_hitokoto && syzoj.config.custom_hitokoto.enabled && user && user.can_see_quote;
   }
 };

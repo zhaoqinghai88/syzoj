@@ -84,7 +84,7 @@
     </div>
     <div class="right floated five wide column side_bar">
         <%
-          let showCustomHitokoto = user && syzoj.config.custom_hitokoto.enabled;
+          let showCustomHitokoto = syzoj.utils.allowedSeeingQuote(user);
           let hitokotoTitle = showCustomHitokoto ? syzoj.config.custom_hitokoto.title : syzoj.config.custom_hitokoto.title_original;
           let hitokotoUrl = showCustomHitokoto ? syzoj.utils.makeUrl(['api', 'quote']) : 'https://v1.hitokoto.cn/?c=a';
         %>

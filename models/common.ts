@@ -35,7 +35,7 @@ function ensureCache(modelName) {
 }
 
 function cacheGet(modelName, id) {
-  return ensureCache(modelName).get(parseInt(id));
+  return DeepCopy(ensureCache(modelName).get(parseInt(id)));
 }
 
 function cacheSet(modelName, id, data) {
