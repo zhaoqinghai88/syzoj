@@ -87,6 +87,7 @@ export default class Quote extends Model {
         where: { from: where.from }
       })).map(({ quote_id }) => quote_id);
       quotes = await Promise.all(quoteIds.map(quoteId => Quote.findById(quoteId)));
+      quotes = quotes.filter(quote => !!quote);
     } else {
       quotes = (await this.findAll()) as Quote[];
     }
