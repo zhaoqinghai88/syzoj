@@ -1,12 +1,13 @@
 import * as TypeORM from "typeorm";
 import Model from "./common";
 
-declare var syzoj: any;
+declare var syzoj, ErrorMessage: any;
 
 import JudgeState from "./judge_state";
 import UserPrivilege from "./user_privilege";
 import Article from "./article";
 import TodoList from "./todo-list";
+import UserRestriction from "./user-restriction";
 
 @TypeORM.Entity()
 export default class User extends Model {
@@ -220,6 +221,15 @@ export default class User extends Model {
     const result = !!x;
     this.privilege_cache.set(privilege, result);
     return result;
+  }
+
+  async isRestricted(restriction: string): Promise<boolean> {
+    if (this.is_admin) return false;
+
+    const item = await UserRestriction.findOne({
+      where: { user_id: this.id, restriction }
+    });
+    return !!item;
   }
 
   async getLastSubmitLanguage() {

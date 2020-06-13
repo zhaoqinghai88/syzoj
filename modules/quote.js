@@ -309,6 +309,7 @@ app.post('/api/quote/:id/edit', app.multer.array('files'), async (req, res) => {
 
     const findQuoteOrCreate = async () => {
       if (isNew) {
+        assert(!await user.isRestricted("add_quote"), "您被禁止使用此功能");
         return createQuote();
       } else {
         assert(Number.isSafeInteger(data.id));
