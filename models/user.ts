@@ -232,6 +232,20 @@ export default class User extends Model {
     return !!item;
   }
 
+  async checkRestricted(restriction: string, messageTemplate?: string): Promise<void> {
+    if (this.is_admin) return;
+
+    const item = await UserRestriction.findOne({
+      where: { user_id: this.id, restriction }
+    });
+
+    if (item) {
+      messageTemplate = messageTemplate || '您被禁止使用此功能，原因：{reason}';
+      const message = messageTemplate.replace('{reason}', item.reason);
+      throw new ErrorMessage(message);
+    }
+  }
+
   async getLastSubmitLanguage() {
     let a = await JudgeState.findOne({
       where: {

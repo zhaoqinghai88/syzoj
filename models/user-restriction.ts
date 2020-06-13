@@ -11,6 +11,6 @@ export default class UserRestriction extends Model {
   @TypeORM.PrimaryColumn({ type: "varchar", length: 80 })
   restriction: string;
 
-  @TypeORM.Column({ type: "tinytext", nullable: true })
+  @TypeORM.Column({ type: "tinytext" })
   reason: string;
 }
