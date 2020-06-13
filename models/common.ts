@@ -38,6 +38,10 @@ function cacheGet(modelName, id) {
   return DeepCopy(ensureCache(modelName).get(parseInt(id)));
 }
 
+function cacheGetAll(modelName) {
+  return ensureCache(modelName).values().map(obj => DeepCopy(obj));
+}
+
 function cacheSet(modelName, id, data) {
   if (data == null) {
     ensureCache(modelName).del(id);
@@ -82,7 +86,7 @@ export default class Model extends TypeORM.BaseEntity {
         this.allCached = true;
       }
 
-      const resultObjects = ensureCache(this.name).values().filter(x => !!x);
+      const resultObjects = cacheGetAll(this.name);
       return resultObjects.map(resultObject => (this as typeof Model).create(resultObject));
     } else {
       return await doQuery();
