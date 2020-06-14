@@ -167,9 +167,11 @@
                 </a>
                 <div class="submit_time">
                   <%= syzoj.utils.formatTime(item.player.score_details[problem.id].judge_state.submit_time - contest.start_time) %>
-                  <% if (item.player.score_details[problem.id].score) {
-                    latest = Math.max(latest, item.player.score_details[problem.id].judge_state.submit_time)
-                  } %>
+                  <%
+                    if (item.player.score_details[problem.id].score) {
+                      latest = Math.max(latest, item.player.score_details[problem.id].judge_state.submit_time)
+                    }
+                  %>
                 </div>
               </td>
             <% } %>
