@@ -1,4 +1,5 @@
-<% this.title = article.title + ' - 帖子'; %>
+<% this.title = [article.title, article.forum === 'solutions' ? '题解' : '帖子'].join(' - '); %>
+<% include discussion_util %>
 <% include header %>
 <style type="text/css" xmlns:style="http://www.w3.org/1999/xhtml">
 .small{
@@ -6,17 +7,7 @@
 }
 </style>
 <div class="padding">
-  <div class="ui breadcrumb">
-    <div class="section">讨论</div>
-    <i class="right angle icon divider"></i>
-    <% if (problem) { %>
-      <div class="section"><a href="<%= syzoj.utils.makeUrl(['discussion', 'problems']) %>">题目</a></div>
-      <i class="right angle icon divider"></i>
-      <a href="<%= syzoj.utils.makeUrl(['discussion', 'problem', problem.id]) %>" class="active section"><%= problem.title %></a>
-    <% } else { %>
-      <a href="<%= syzoj.utils.makeUrl(['discussion', 'global']) %>" class="section">全局板块</a>
-    <% } %>
-  </div>
+  <% include discussion_breadcrumb %>
   <h1><%= article.title %></h1>
  	<p style="margin-bottom: -5px; ">
 	<img style="vertical-align: middle; margin-bottom: 2px; margin-right: 2px; " src="<%= syzoj.utils.gravatar(article.user.email, 34) %>" width="17" height="17">

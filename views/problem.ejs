@@ -101,7 +101,13 @@ if (contest) {
           <a class="small ui brown button" href="<%= syzoj.utils.makeUrl(['discussion', 'problem', problem.id]) %>" style="position: relative; ">
             讨论
             <% if (discussionCount) { %>
-              <div class="floating ui red tiny circular label" style="background-color: #8c5633 !important; top: -0.6em; "><%= discussionCount %></div>
+              <div class="floating ui brown tiny circular label" style="background-color: #8c5633 !important; top: -0.6em; "><%= discussionCount %></div>
+            <% } %>
+          </a>
+          <a class="small ui purple button" href="<%= syzoj.utils.makeUrl(['problem', problem.id, 'solutions']) %>" style="position: relative; ">
+            题解
+            <% if (solutionCount) { %>
+              <div class="floating ui purple tiny circular label" style="background-color: #8c30ab !important; top: -0.6em; "><%= solutionCount %></div>
             <% } %>
           </a>
           <% if (user) { %>

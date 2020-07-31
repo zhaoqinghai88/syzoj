@@ -3,19 +3,18 @@ let Article = syzoj.model('article');
 let ArticleComment = syzoj.model('article-comment');
 let User = syzoj.model('user');
 
+const forums = ['global', 'problems', 'solutions'];
+const problem_forums = ['problems', 'solutions'];
+
 app.get('/discussion/:type?', async (req, res) => {
   try {
-    if (!['global', 'problems'].includes(req.params.type)) {
+    const forum = req.params.type;
+
+    if (!forums.includes(forum)) {
       res.redirect(syzoj.utils.makeUrl(['discussion', 'global']));
     }
-    const in_problems = req.params.type === 'problems';
 
-    let where;
-    if (in_problems) {
-      where = { problem_id: TypeORM.Not(TypeORM.IsNull()) };
-    } else {
-      where = { problem_id: null };
-    }
+    let where = { forum };
     let paginate = syzoj.utils.paginate(await Article.countForPagination(where), req.query.page, syzoj.config.page.discussion);
     let articles = await Article.queryPage(paginate, where, {
       sort_time: 'DESC'
@@ -23,7 +22,7 @@ app.get('/discussion/:type?', async (req, res) => {
 
     for (let article of articles) {
       await article.loadRelationships();
-      if (in_problems) {
+      if (article.problem_id) {
         article.problem = await Problem.findById(article.problem_id);
       }
     }
@@ -32,7 +31,7 @@ app.get('/discussion/:type?', async (req, res) => {
       articles: articles,
       paginate: paginate,
       problem: null,
-      in_problems: in_problems
+      forum: forum
     });
   } catch (e) {
     syzoj.log(e);
@@ -51,7 +50,7 @@ app.get('/discussion/problem/:pid', async (req, res) => {
       throw new ErrorMessage('您没有权限进行此操作。');
     }
 
-    let where = { problem_id: pid };
+    let where = { forum: "problems", problem_id: pid };
     let paginate = syzoj.utils.paginate(await Article.countForPagination(where), req.query.page, syzoj.config.page.discussion);
     let articles = await Article.queryPage(paginate, where, {
       sort_time: 'DESC'
@@ -63,7 +62,7 @@ app.get('/discussion/problem/:pid', async (req, res) => {
       articles: articles,
       paginate: paginate,
       problem: problem,
-      in_problems: false
+      forum: 'problems'
     });
   } catch (e) {
     syzoj.log(e);
@@ -101,7 +100,7 @@ app.get('/article/:id', async (req, res) => {
 
     let problem = null;
     if (article.problem_id) {
-      problem = await Problem.findById(article.problem_id);
+      problem = article.problem = await Problem.findById(article.problem_id);
       if (!await problem.isAllowedUseBy(res.locals.user)) {
         throw new ErrorMessage('您没有权限进行此操作。');
       }
@@ -116,7 +115,8 @@ app.get('/article/:id', async (req, res) => {
       comments: comments,
       paginate: paginate,
       problem: problem,
-      commentsCount: commentsCount
+      commentsCount: commentsCount,
+      is_edit: false
     });
   } catch (e) {
     syzoj.log(e);
@@ -137,12 +137,28 @@ app.get('/article/:id/edit', async (req, res) => {
       article = await Article.create();
       article.id = 0;
       article.allowedEdit = true;
+
+      const { forum, problem_id } = req.query;
+
+      if (!forums.includes(forum)) throw new ErrorMessage('无此版块。');
+      article.forum = forum;
+
+      if (problem_forums.includes(forum)) {
+        let problem = await Problem.findById(problem_id);
+        if (!problem) throw new ErrorMessage("无此题目。");
+        article.problem_id = problem.id;
+        article.problem = problem;
+      }
     } else {
       article.allowedEdit = await article.isAllowedEditBy(res.locals.user);
+      if (article.problem_id) {
+        article.problem = await Problem.findById(article.problem_id);
+      }
     }
 
     res.render('article_edit', {
-      article: article
+      article: article,
+      is_edit: true
     });
   } catch (e) {
     syzoj.log(e);
@@ -165,8 +181,13 @@ app.post('/article/:id/edit', async (req, res) => {
       article.user_id = res.locals.user.id;
       article.public_time = article.sort_time = time;
 
-      if (req.query.problem_id) {
-        let problem = await Problem.findById(req.query.problem_id);
+      const { forum, problem_id } = req.query;
+      if (!forums.includes(forum)) throw new ErrorMessage('无此版块。');
+
+      article.forum = forum;
+
+      if (problem_forums.includes(forum) && problem_id) {
+        let problem = await Problem.findById(problem_id);
         if (!problem) throw new ErrorMessage('无此题目。');
         article.problem_id = problem.id;
       } else {

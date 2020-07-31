@@ -1,0 +1,24 @@
+<%
+  this.forum_list = [
+    ['global', '全局版块', 'world'],
+    ['problems', '题目', 'file outline'],
+    ['solutions', '题解', 'book']
+  ].map(([name, title, icon]) => ({ name, title, icon }));
+
+  this.is_list = typeof article === 'undefined';
+  this.current_forum = (forum => {
+    return forum_list.find(({ name }) => name === forum);
+  })(is_list ? forum : article.forum);
+  this.current_problem = is_list ? problem : article.problem;
+
+  this.get_list_url = function (forum, problem_id) {
+    if (problem_id) {
+      switch (forum) {
+        case 'problems': return syzoj.utils.makeUrl(['discussion', 'problem', problem_id]);
+        case 'solutions': return syzoj.utils.makeUrl(['problem', problem_id, 'solutions']);
+      }
+    } else {
+      return syzoj.utils.makeUrl(['discussion', forum]);
+    }
+  };
+%>

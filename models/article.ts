@@ -8,6 +8,12 @@ import ArticleUserView from "./article-user-view";
 
 declare var syzoj: any;
 
+enum ForumName {
+  global = "global",
+  problems = "problems",
+  solutions = "solutions"
+}
+
 @TypeORM.Entity()
 export default class Article extends Model {
   static cache = false;
@@ -24,6 +30,10 @@ export default class Article extends Model {
   @TypeORM.Index()
   @TypeORM.Column({ nullable: true, type: "integer" })
   user_id: number;
+
+  @TypeORM.Index()
+  @TypeORM.Column({ nullable: true, type: "enum", enum: ForumName })
+  forum: ForumName;
 
   @TypeORM.Index()
   @TypeORM.Column({ nullable: true, type: "integer" })

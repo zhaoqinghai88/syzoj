@@ -376,7 +376,8 @@ app.get('/problem/:id', async (req, res) => {
 
     let testcases = await syzoj.utils.parseTestdata(problem.getTestdataPath(), problem.type === 'submit-answer');
 
-    let discussionCount = await Article.count({ problem_id: id });
+    let discussionCount = await Article.count({ forum: 'problems', problem_id: id });
+    let solutionCount = await Article.count({ forum: 'solutions', problem_id: id });
 
     let inTodoList = await problem.inTodoListOf(res.locals.user);
 
@@ -386,6 +387,7 @@ app.get('/problem/:id', async (req, res) => {
       lastLanguage: res.locals.user ? await res.locals.user.getLastSubmitLanguage() : null,
       testcases: testcases,
       discussionCount: discussionCount,
+      solutionCount: solutionCount,
       inTodoList: inTodoList
     });
   } catch (e) {
@@ -1126,6 +1128,39 @@ app.get('/problem/:id/statistics/:type', async (req, res) => {
       statistics: statistics,
       paginate: paginate,
       problem: problem
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.get('/problem/:id/solutions', async (req, res) => {
+  try {
+    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
+
+    let id = parseInt(req.params.id);
+    let problem = await Problem.findById(id);
+    if (!problem) throw new ErrorMessage('无此题目。');
+    if (!await problem.isAllowedUseBy(res.locals.user)) {
+      throw new ErrorMessage('您没有权限进行此操作。');
+    }
+
+    let where = { forum: "solutions", problem_id: id };
+    let paginate = syzoj.utils.paginate(await Article.countForPagination(where), req.query.page, syzoj.config.page.discussion);
+    let articles = await Article.queryPage(paginate, where, {
+      sort_time: 'DESC'
+    });
+
+    for (let article of articles) await article.loadRelationships();
+
+    res.render('discussion', {
+      articles: articles,
+      paginate: paginate,
+      problem: problem,
+      forum: 'solutions'
     });
   } catch (e) {
     syzoj.log(e);
