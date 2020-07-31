@@ -15,28 +15,12 @@
 	<b style="margin-right: 30px; "><i class="calendar icon"></i> <%= syzoj.utils.formatDate(article.public_time) %></b>
   <% if (article.public_time !== article.update_time) { %><b style="margin-right: 30px; "><i class="edit icon"></i> <%= syzoj.utils.formatDate(article.update_time) %></b><% } %>
   <b style="margin-right: 30px; "><i class="eye icon"></i> <%= article.views %></b>
-        <% if (article.allowedEdit) { %>
+    <% if (article.allowedEdit) { %>
         <a style="margin-top: -4px; " class="ui mini right floated labeled icon button" href="<%= syzoj.utils.makeUrl(['article', article.id, 'edit']) %>"><i class="ui edit icon"></i>编辑</a>
         <a style="margin-top: -4px; margin-right: 3px; " class="ui mini red right floated labeled icon button" onclick="$('#modal-delete').modal('show')"><i class="ui trash icon"></i>删除</a>
-        <div class="ui basic modal right floated" id="modal-delete">
-          <div class="ui icon header">
-            <i class="trash icon"></i>
-            <p style="margin-top: 15px; ">删除文章</p>
-          </div>
-          <div class="content" style="text-align: center; ">
-            <p>确认删除这篇文章吗？</p>
-          </div>
-          <div class="actions">
-            <div class="ui red basic cancel inverted button">
-              <i class="remove icon"></i>
-              否
-            </div>
-            <a class="ui green ok inverted button" href-post="<%= syzoj.utils.makeUrl(['article', article.id, 'delete']) %>">
-              <i class="checkmark icon"></i>
-              是
-            </a>
-          </div>
-        </div>
+        <% } %>
+        <% if (article.problem) { %>
+          <a style="margin-top: -4px; margin-right: 3px; " class="ui mini right floated labeled icon primary button" href="<%= syzoj.utils.makeUrl(['problem', article.problem.id]) %>"><i class="ui left arrow icon"></i> 返回题目</a>
         <% } %>
  	</p>
   <div class="ui existing segment">
@@ -97,6 +81,27 @@
       </button>
       </div>
     </form>
+  <% } %>
+  <% if (article.allowedEdit) { %>
+    <div class="ui basic modal" id="modal-delete">
+      <div class="ui icon header">
+        <i class="trash icon"></i>
+        <p style="margin-top: 15px; ">删除文章</p>
+      </div>
+      <div class="content" style="text-align: center; ">
+        <p>确认删除这篇文章吗？</p>
+      </div>
+      <div class="actions">
+        <div class="ui red basic cancel inverted button">
+          <i class="remove icon"></i>
+          否
+        </div>
+        <a class="ui green ok inverted button" href-post="<%= syzoj.utils.makeUrl(['article', article.id, 'delete']) %>">
+          <i class="checkmark icon"></i>
+          是
+        </a>
+      </div>
+    </div>
   <% } %>
 </div>
 <% include footer %>
