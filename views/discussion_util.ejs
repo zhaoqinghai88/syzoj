@@ -1,8 +1,9 @@
 <%
   this.forum_list = [
     ['global', '全局版块', 'world'],
-    ['problems', '题目', 'file outline'],
-    ['solutions', '题解', 'book']
+    ['announcements', '公告栏', 'bullhorn'],
+    ['problems', '题目', 'book'],
+    ['solutions', '题解', 'code']
   ].map(([name, title, icon]) => ({ name, title, icon }));
 
   this.is_list = typeof article === 'undefined';

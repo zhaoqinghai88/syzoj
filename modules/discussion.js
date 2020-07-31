@@ -3,7 +3,7 @@ let Article = syzoj.model('article');
 let ArticleComment = syzoj.model('article-comment');
 let User = syzoj.model('user');
 
-const forums = ['global', 'problems', 'solutions'];
+const forums = ['global', 'announcements', 'problems', 'solutions'];
 const problem_forums = ['problems', 'solutions'];
 
 app.get('/discussion/:type?', async (req, res) => {

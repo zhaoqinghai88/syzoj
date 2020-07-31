@@ -10,6 +10,7 @@ declare var syzoj: any;
 
 enum ForumName {
   global = "global",
+  announcements = "announcements",
   problems = "problems",
   solutions = "solutions"
 }
