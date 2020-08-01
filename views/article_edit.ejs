@@ -28,7 +28,7 @@
     <% if (user && user.is_admin) { %>
         <div class="ui <% if (article.is_notice) { %>checked <% } %>checkbox" style="margin-top: 15px; ">
           <input <% if (article.is_notice) { %>checked=""<% } %> name="is_notice" type="checkbox">
-          <label><strong>公告</strong></label>
+          <label><strong>在首页显示</strong></label>
           <p style="margin-top: 5px; ">选择后将显示在首页公告栏。</p>
         </div>
       <% } %>
