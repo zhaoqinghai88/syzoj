@@ -403,7 +403,7 @@ app.get('/contest/:id/submissions', async (req, res) => {
       isFiltered = true;
     }
 
-    query.andWhere('type = 1')
+    query.andWhere('type = :type', { type: contest.getSubmissionType() })
          .andWhere('type_info = :contest_id', { contest_id });
 
     let judge_state, paginate;

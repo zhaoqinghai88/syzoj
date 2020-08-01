@@ -152,4 +152,8 @@ export default class Contest extends Model {
     if (!now) now = syzoj.utils.getCurrentDate();
     return now >= this.end_time;
   }
+
+  getSubmissionType() {
+    return this.type === ContestType.CRT ? 2 : 1;
+  }
 }

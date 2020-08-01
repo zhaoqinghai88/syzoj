@@ -6,26 +6,9 @@ declare var syzoj, ErrorMessage: any;
 import User from "./user";
 import Problem from "./problem";
 import Contest from "./contest";
+import { Status } from "./interfaces";
 
 const Judger = syzoj.lib('judger');
-
-enum Status {
-  ACCEPTED = "Accepted",
-  COMPILE_ERROR = "Compile Error",
-  FILE_ERROR = "File Error",
-  INVALID_INTERACTION = "Invalid Interaction",
-  JUDGEMENT_FAILED = "Judgement Failed",
-  MEMORY_LIMIT_EXCEEDED = "Memory Limit Exceeded",
-  NO_TESTDATA = "No Testdata",
-  OUTPUT_LIMIT_EXCEEDED = "Output Limit Exceeded",
-  PARTIALLY_CORRECT = "Partially Correct",
-  RUNTIME_ERROR = "Runtime Error",
-  SYSTEM_ERROR = "System Error",
-  TIME_LIMIT_EXCEEDED = "Time Limit Exceeded",
-  UNKNOWN = "Unknown",
-  WRONG_ANSWER = "Wrong Answer",
-  WAITING = "Waiting"
-}
 
 @TypeORM.Entity()
 @TypeORM.Index(['type', 'type_info'])
@@ -88,8 +71,11 @@ export default class JudgeState extends Model {
   submit_time: number;
 
   /*
-   * "type" indicate it's contest's submission(type = 1) or normal submission(type = 0)
-   * if it's contest's submission (type = 1), the type_info is contest_id
+   * "type" indicate it's:
+   * a competitive contest's submission (type = 1), or
+   * a normal submission (type = 0), or
+   * a correction contest's submission (type = 2)
+   * if it's contest's submission (type = 1 or 2), the type_info is contest_id
    * use this way represent because it's easy to expand // Menci：这锅我不背，是 Chenyao 留下来的坑。
    */
   @TypeORM.Column({ nullable: true, type: "integer" })
@@ -122,11 +108,12 @@ export default class JudgeState extends Model {
     await this.loadRelationships();
 
     if (user && user.id === this.problem.user_id) return true;
-    else if (this.type === 0) return this.problem.is_public || (user && (await user.hasPrivilege('manage_problem')));
-    else if (this.type === 1) {
+    if (this.type === 0 || this.type === 2) {
+      return await this.problem.isAllowedUseBy(user);
+    } else if (this.type === 1) {
       let contest = await Contest.findById(this.type_info);
       if (contest.isRunning()) {
-        return user && (contest.type === 'crt' || await contest.isSupervisior(user));
+        return user && await contest.isSupervisior(user);
       } else {
         return true;
       }
@@ -134,7 +121,7 @@ export default class JudgeState extends Model {
   }
 
   async updateRelatedInfo(newSubmission) {
-    if (this.type === 0) {
+    if (this.type === 0 || this.type === 2) {
       await this.loadRelationships();
 
       const promises = [];
@@ -146,7 +133,9 @@ export default class JudgeState extends Model {
       }
 
       await Promise.all(promises);
-    } else if (this.type === 1) {
+    }
+
+    if (this.type === 1 || this.type === 2) {
       let contest = await Contest.findById(this.type_info);
       await contest.newSubmission(this);
     }

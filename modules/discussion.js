@@ -101,7 +101,14 @@ app.get('/article/:id', async (req, res) => {
     let problem = null;
     if (article.problem_id) {
       problem = article.problem = await Problem.findById(article.problem_id);
-      if (!await problem.isAllowedUseBy(res.locals.user)) {
+      if (req.query.contest_id) {
+        let contest = await Contest.findById(req.query.contest_id);
+        if (!contest || !contest.is_public) throw new ErrorMessage('无此比赛或比赛未公开。');
+        if (contest.type !== 'crt') throw new ErrorMessage('比赛不是订正赛。');
+        if (contest.isEnded()) return res.redirect(syzoj.utils.makeUrl(['article', article.id]));
+        if (!contest.isRunning()) throw new ErrorMessage('订正赛未开始。');
+        if (!contest.getProblems().includes(problem.id)) throw new ErrorMessage('订正赛中无此题目。');
+      } else if (!await problem.isAllowedUseBy(res.locals.user)) {
         throw new ErrorMessage('您没有权限进行此操作。');
       }
     }
@@ -146,6 +153,9 @@ app.get('/article/:id/edit', async (req, res) => {
       if (problem_forums.includes(forum)) {
         let problem = await Problem.findById(problem_id);
         if (!problem) throw new ErrorMessage("无此题目。");
+        if (!await problem.isAllowedUseBy(res.locals.user)) {
+          throw new ErrorMessage('您没有权限进行此操作。');
+        }
         article.problem_id = problem.id;
         article.problem = problem;
       }

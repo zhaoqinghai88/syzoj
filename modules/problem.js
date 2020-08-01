@@ -879,7 +879,7 @@ app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1
       let problems_id = await contest.getProblems();
       if (!problems_id.includes(id)) throw new ErrorMessage('无此题目。');
 
-      judge_state.type = 1;
+      judge_state.type = contest.getSubmissionType();
       judge_state.type_info = contest_id;
 
       await judge_state.save();
@@ -1144,7 +1144,15 @@ app.get('/problem/:id/solutions', async (req, res) => {
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');
-    if (!await problem.isAllowedUseBy(res.locals.user)) {
+
+    if (req.query.contest_id) {
+      let contest = await Contest.findById(req.query.contest_id);
+      if (!contest || !contest.is_public) throw new ErrorMessage('无此比赛或比赛未公开。');
+      if (contest.type !== 'crt') throw new ErrorMessage('比赛不是订正赛。');
+      if (contest.isEnded()) return res.redirect(syzoj.utils.makeUrl(['problem', problem.id, 'solutions']));
+      if (!contest.isRunning()) throw new ErrorMessage('订正赛未开始。');
+      if (!contest.getProblems().includes(problem.id)) throw new ErrorMessage('订正赛中无此题目。');
+    } else if (!await problem.isAllowedUseBy(res.locals.user)) {
       throw new ErrorMessage('您没有权限进行此操作。');
     }
 
