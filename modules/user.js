@@ -1,4 +1,5 @@
 let User = syzoj.model('user');
+let Problem = syzoj.model('problem');
 const RatingCalculation = syzoj.model('rating_calculation');
 const RatingHistory = syzoj.model('rating_history');
 const Contest = syzoj.model('contest');
@@ -53,7 +54,7 @@ app.get('/api/user/search', async (req, res) => {
       })
       .limit(5)
       .getMany();
-    
+
       res.send({
         error: null,
         data: users.map(({ id, username }) => ({ id, username }))
@@ -103,6 +104,11 @@ app.get('/user/:id', async (req, res) => {
     if (!user) throw new ErrorMessage('无此用户。');
     user.ac_problems = await user.getACProblems();
     user.articles = await user.getArticles();
+    for (let article of user.articles) {
+      if (article.problem_id) {
+        article.problem = await Problem.findById(article.problem_id);
+      }
+    }
     user.allowedEdit = await user.isAllowedEditBy(res.locals.user);
 
     let statistics = await user.getStatistics();
