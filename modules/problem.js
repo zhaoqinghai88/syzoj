@@ -885,6 +885,21 @@ app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1
       await judge_state.save();
     } else {
       if (!await problem.isAllowedUseBy(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
+      if (!await problem.isAllowedEditBy(curUser)) {
+        let contests = await Contest.createQueryBuilder()
+          .select()
+          .where("`type` = 'crt'")
+          .andWhere("`is_public` = 1")
+          .andWhere("`start_time` <= :now", { now: Math.floor(Date.now() / 1000) })
+          .andWhere("`end_time` > :now")
+          .getMany();
+
+        for (let contest of contests) {
+          if ((await contest.getProblems()).includes(problem.id)) {
+            throw new ErrorMessage('请到对应的订正赛中提交。');
+          }
+        }
+      }
       judge_state.type = 0;
       await judge_state.save();
     }
@@ -1145,13 +1160,13 @@ app.get('/problem/:id/solutions', async (req, res) => {
     let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');
 
+    let contest;
     if (req.query.contest_id) {
-      let contest = await Contest.findById(req.query.contest_id);
-      if (!contest || !contest.is_public) throw new ErrorMessage('无此比赛或比赛未公开。');
-      if (contest.type !== 'crt') throw new ErrorMessage('比赛不是订正赛。');
-      if (contest.isEnded()) return res.redirect(syzoj.utils.makeUrl(['problem', problem.id, 'solutions']));
-      if (!contest.isRunning()) throw new ErrorMessage('订正赛未开始。');
-      if (!contest.getProblems().includes(problem.id)) throw new ErrorMessage('订正赛中无此题目。');
+      contest = await Contest.findById(req.query.contest_id);
+      if (!contest) throw new ErrorMessage('无此比赛。');
+      contest.problems_id = await contest.getProblems();
+      if (!contest.problems_id.includes(problem.id)) throw new ErrorMessage('比赛中无此题目。');
+      if (!contest.allowedSeeingSolution()) throw new ErrorMessage('您没有权限进行此操作。');
     } else if (!await problem.isAllowedUseBy(res.locals.user)) {
       throw new ErrorMessage('您没有权限进行此操作。');
     }
@@ -1168,7 +1183,8 @@ app.get('/problem/:id/solutions', async (req, res) => {
       articles: articles,
       paginate: paginate,
       problem: problem,
-      forum: 'solutions'
+      forum: 'solutions',
+      contest: contest
     });
   } catch (e) {
     syzoj.log(e);

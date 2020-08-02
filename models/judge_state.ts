@@ -108,16 +108,19 @@ export default class JudgeState extends Model {
     await this.loadRelationships();
 
     if (user && user.id === this.problem.user_id) return true;
+
     if (this.type === 0 || this.type === 2) {
-      return await this.problem.isAllowedUseBy(user);
-    } else if (this.type === 1) {
-      let contest = await Contest.findById(this.type_info);
-      if (contest.isRunning()) {
-        return user && await contest.isSupervisior(user);
-      } else {
-        return true;
-      }
+      if (await this.problem.isAllowedUseBy(user)) return true;
     }
+
+    if (this.type === 1 || this.type === 2) {
+      let contest = await Contest.findById(this.type_info);
+
+      if (contest.allowedSeeingSolution()) return true;
+      if (user && await contest.isSupervisior(user)) return true;
+    }
+    
+    return false;
   }
 
   async updateRelatedInfo(newSubmission) {

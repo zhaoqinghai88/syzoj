@@ -2,6 +2,7 @@ let Problem = syzoj.model('problem');
 let Article = syzoj.model('article');
 let ArticleComment = syzoj.model('article-comment');
 let User = syzoj.model('user');
+let Contest = syzoj.model('contest');
 
 const forums = ['global', 'announcements', 'problems', 'solutions'];
 const problem_forums = ['problems', 'solutions'];
@@ -98,16 +99,15 @@ app.get('/article/:id', async (req, res) => {
       await comment.loadRelationships();
     }
 
-    let problem = null;
+    let problem, contest;
     if (article.problem_id) {
       problem = article.problem = await Problem.findById(article.problem_id);
       if (req.query.contest_id) {
-        let contest = await Contest.findById(req.query.contest_id);
-        if (!contest || !contest.is_public) throw new ErrorMessage('无此比赛或比赛未公开。');
-        if (contest.type !== 'crt') throw new ErrorMessage('比赛不是订正赛。');
-        if (contest.isEnded()) return res.redirect(syzoj.utils.makeUrl(['article', article.id]));
-        if (!contest.isRunning()) throw new ErrorMessage('订正赛未开始。');
-        if (!contest.getProblems().includes(problem.id)) throw new ErrorMessage('订正赛中无此题目。');
+        contest = await Contest.findById(req.query.contest_id);
+        if (!contest) throw new ErrorMessage('无此比赛。');
+        contest.problems_id = await contest.getProblems();
+        if (!contest.problems_id.includes(problem.id)) throw new ErrorMessage('比赛中无此题目。');
+        if (!contest.allowedSeeingSolution()) throw new ErrorMessage('您没有权限进行此操作。');
       } else if (!await problem.isAllowedUseBy(res.locals.user)) {
         throw new ErrorMessage('您没有权限进行此操作。');
       }
@@ -123,7 +123,8 @@ app.get('/article/:id', async (req, res) => {
       paginate: paginate,
       problem: problem,
       commentsCount: commentsCount,
-      is_edit: false
+      is_edit: false,
+      contest: contest
     });
   } catch (e) {
     syzoj.log(e);

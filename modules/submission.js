@@ -40,7 +40,7 @@ app.get('/submissions', async (req, res) => {
     }
 
     if (!req.query.contest) {
-      query.andWhere('type = 0');
+      query.andWhere('type != 1');
     } else {
       const contestId = Number(req.query.contest);
       const contest = await Contest.findById(contestId);

@@ -93,6 +93,10 @@ export default class Contest extends Model {
     return false;
   }
 
+  allowedSeeingSolution() {
+    return this.is_public && (this.isEnded() || (this.type === 'crt' && this.isRunning()));
+  }
+
   async getProblems() {
     if (!this.problems) return [];
     return this.problems.split('|').map(x => parseInt(x));

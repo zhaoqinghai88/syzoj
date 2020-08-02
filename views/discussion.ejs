@@ -28,7 +28,7 @@
       </div>
       <div class="six wide right aligned column">
         <% if (problem) { %>
-          <a style="margin-left: 10px; " href="<%= syzoj.utils.makeUrl(['problem', problem.id]) %>" class="ui labeled icon mini blue button">
+          <a style="margin-left: 10px; " href="<%= get_problem_url() %>" class="ui labeled icon mini blue button">
             <i class="arrow left icon"></i>
             返回题目
           </a>
@@ -58,7 +58,7 @@
     <tbody>
     <% for (let article of articles) { %>
         <tr>
-            <td class="left aligned"><a href="<%= syzoj.utils.makeUrl(['article', article.id]) %>"><%= article.title %></a></td>
+            <td class="left aligned"><a href="<%= syzoj.utils.makeUrl(['article', article.id], is_contest && { contest_id: contest.id }) %>"><%= article.title %></a></td>
             <% if (in_problems) { %>
               <td><a href="<%= get_list_url(article.forum, article.problem.id) %>"><%= article.problem.title %></a></td>
             <% } %>

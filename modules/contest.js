@@ -4,6 +4,8 @@ let ContestPlayer = syzoj.model('contest_player');
 let Problem = syzoj.model('problem');
 let JudgeState = syzoj.model('judge_state');
 let User = syzoj.model('user');
+let Article = syzoj.model('article');
+let FormattedCode = syzoj.model('formatted_code');
 
 const jwt = require('jsonwebtoken');
 const { getSubmissionInfo, getRoughResult, processOverallResult } = require('../libs/submissions_process');
@@ -466,7 +468,7 @@ app.get('/contest/submission/:id', async (req, res) => {
     const judge = await JudgeState.findById(id);
     if (!judge) throw new ErrorMessage("提交记录 ID 不正确。");
 
-    if (judge.type !== 1) {
+    if (judge.type === 0) {
       return res.redirect(syzoj.utils.makeUrl(['submission', id]));
     }
 
@@ -486,6 +488,14 @@ app.get('/contest/submission/:id', async (req, res) => {
     judge.problem.title = syzoj.utils.removeTitleTag(judge.problem.title);
 
     if (judge.problem.type !== 'submit-answer') {
+      let key = syzoj.utils.getFormattedCodeKey(judge.code, judge.language);
+      if (key) {
+        let formattedCode = await FormattedCode.findOne({ where: { key } });
+        if (formattedCode) {
+          judge.formattedCode = await syzoj.utils.highlight(formattedCode.code, syzoj.languages[judge.language].highlight);
+        }
+      }
+
       judge.codeLength = Buffer.from(judge.code).length;
       judge.code = await syzoj.utils.highlight(judge.code, syzoj.languages[judge.language].highlight);
     }
@@ -555,13 +565,19 @@ app.get('/contest/:id/problem/:pid', async (req, res) => {
 
     await problem.loadRelationships();
 
+    let solutionCount;
+    if (contest.type === 'crt') {
+      solutionCount = await Article.count({ forum: 'solutions', problem_id: problem.id });
+    }
+
     res.render('problem', {
       pid: pid,
       contest: contest,
       problem: problem,
       state: state,
       lastLanguage: res.locals.user ? await res.locals.user.getLastSubmitLanguage() : null,
-      testcases: testcases
+      testcases: testcases,
+      solutionCount: solutionCount
     });
   } catch (e) {
     syzoj.log(e);

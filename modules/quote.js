@@ -1,12 +1,9 @@
 
 const fs = require('fs-extra');
 const pathlib = require('path');
-const randomstring = require('randomstring');
-const TypeORM = require('typeorm');
 
 const User = syzoj.model('user');
 const Quote = syzoj.model('quote');
-const QuoteFrom = syzoj.model('quote-from');
 const QuoteUserVote = syzoj.model('quote-user-vote');
 
 const { baseDir, isValidImageExt } = Quote;
