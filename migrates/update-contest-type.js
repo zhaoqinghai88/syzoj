@@ -1,4 +1,3 @@
-const { judge } = require('../libs/judger');
 
 const fn = async () => {
   require('..');
