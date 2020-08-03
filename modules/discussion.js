@@ -4,8 +4,15 @@ let ArticleComment = syzoj.model('article-comment');
 let User = syzoj.model('user');
 let Contest = syzoj.model('contest');
 
-const forums = ['global', 'announcements', 'problems', 'solutions'];
-const problem_forums = ['problems', 'solutions'];
+const forum_list = syzoj.forum_list = [
+  { name: 'global', title: '全局版块', icon: 'world', default: true },
+  ...syzoj.config.discussion_forums,
+  { name: 'problems', title: '题目', icon: 'book' },
+  { name: 'solutions', title: '题解', icon: 'code' }
+];
+const forum_map = syzoj.forum_map = new Map(forum_list.map(forum => [forum.name, forum]));
+const forums = forum_list.map(({ name }) => name);
+const problem_forums = syzoj.problem_forums = ['problems', 'solutions'];
 
 app.get('/discussion/:type?', async (req, res) => {
   try {

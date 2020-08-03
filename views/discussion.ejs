@@ -1,16 +1,21 @@
 <%
   let title_parts;
+  let text_article, text_new_article;
   if (forum === 'solutions') {
     title_parts = ['题解'];
+    text_article = '题解';
+    text_new_article = '发表题解';
   } else {
     title_parts = ['讨论'];
+    text_article = '讨论';
+    text_new_article = '发帖';
   }
   if (problem) title_parts.push(problem.title);
   this.title = title_parts.join(' - ');
 %>
 <% include discussion_util %>
 <%
-  const in_problems = ['problems', 'solutions'].includes(forum) && !problem;
+  const in_problems = syzoj.problem_forums.includes(forum) && !problem;
 
   let url_new_article = null;
   if (!in_problems && user) {
@@ -36,7 +41,7 @@
         <% if (articles.length && url_new_article) { %>
           <a style="margin-left: 10px; " href="<%= url_new_article %>" class="ui labeled icon mini button">
             <i class="write icon"></i>
-            发帖
+            <%= text_new_article %>
           </a>
         <% } %>
       </div>
@@ -75,12 +80,12 @@
   <div class="ui placeholder segment">
     <div class="ui icon header">
       <i class="chat icon" style="margin-bottom: 20px; "></i>
-      暂无讨论
+      暂无<%= text_article %>
     </div>
     <% if (url_new_article) { %>
       <a href="<%= url_new_article %>" class="ui primary labeled icon button">
         <i class="write icon"></i>
-        发帖
+        <%= text_new_article %>
       </a>
     <% } %>
   </div>

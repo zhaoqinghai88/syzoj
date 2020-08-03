@@ -1,15 +1,8 @@
 <%
-  this.forum_list = [
-    ['global', '全局版块', 'world'],
-    ['announcements', '公告栏', 'bullhorn'],
-    ['problems', '题目', 'book'],
-    ['solutions', '题解', 'code']
-  ].map(([name, title, icon]) => ({ name, title, icon }));
+  this.forum_list = syzoj.forum_list;
 
   this.is_list = typeof article === 'undefined';
-  this.current_forum = (forum => {
-    return forum_list.find(({ name }) => name === forum);
-  })(is_list ? forum : article.forum);
+  this.current_forum = syzoj.forum_map.get(is_list ? forum : article.forum);
   this.current_problem = is_list ? problem : article.problem;
   this.is_contest = typeof contest !== 'undefined' && contest;
 
