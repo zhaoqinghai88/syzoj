@@ -53,6 +53,23 @@
           <label>　</label>
         </div>
       </div>
+      <div class="inline field">
+        <label>实名认证状态</label>
+        <%
+          let [verify_status, verify_label_color, verify_icon] = (identity => {
+            if (!identity) return ['未实名', '', 'minus'];
+            switch (identity.status) {
+              case 'pending': return ['审核中', '', 'hourglass half'];
+              case 'approved': return ['已实名', 'green', 'checkmark'];
+              case 'rejected': return ['审核未通过', 'red', 'remove'];
+            }
+          })(edited_user.identity);
+        %>
+        <a class="ui tiny <%= verify_label_color %> label" href="<%= syzoj.utils.makeUrl(['user', edited_user.id, 'verify']) %>">
+          <i class="<%= verify_icon %> icon"></i>
+          <%= verify_status %>
+        </a>
+      </div>
       <div class="field">
       <label for="information">个性签名</label>
         <textarea class="markdown-edit" rows="5" id="information" name="information"><%= edited_user.information %></textarea>

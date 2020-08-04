@@ -9,6 +9,7 @@ const RatingHistory = syzoj.model('rating_history');
 let ContestPlayer = syzoj.model('contest_player');
 const InvitationCode = syzoj.model('invitation_code');
 const InvitationCodeUsername = syzoj.model('invitation_code_username');
+const UserIdentity = syzoj.model('user-identity');
 const calcRating = require('../libs/rating');
 
 const TypeORM = require('typeorm');
@@ -713,5 +714,31 @@ app.post('/admin/bulk_public', async (req, res) => {
       error_info: e.message,
       status: 'failed'
     });
+  }
+});
+
+app.get('/admin/user_verify', async (req, res) => {
+  try {
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_user')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let items = await UserIdentity.find({ status: 'pending' });
+
+    res.render('admin_user_verify', {
+      items: await Promise.all(items.map(async identity => {
+        let user = await User.findById(identity.user_id);
+        identity.user = {
+          id: user.id,
+          username: user.username
+        };
+        identity.creation_time = syzoj.utils.formatDate(identity.creation_time.getTime() / 1000);
+        identity.update_time = syzoj.utils.formatDate(identity.update_time.getTime() / 1000);
+        return identity;
+      }))
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
   }
 });

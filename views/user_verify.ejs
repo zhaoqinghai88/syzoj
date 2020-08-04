@@ -1,0 +1,137 @@
+<% this.title = '实名认证'; %>
+<% include header %>
+<div class="padding">
+	<form id="form" method="post">
+    <div class="ui form">
+      <div class="inline field">
+        <label>用户名</label>
+        <span><%= edited_user.username %></span>
+      </div>
+      <div class="inline field">
+        <label>实名认证状态</label>
+        <%
+          let [verify_status, verify_label_color, verify_icon] = (identity => {
+            if (!identity) return ['未实名', '', 'minus'];
+            switch (identity.status) {
+              case 'pending': return ['审核中', '', 'hourglass half'];
+              case 'approved': return ['已实名', 'green', 'checkmark'];
+              case 'rejected': return ['审核未通过', 'red', 'remove'];
+            }
+          })(identity);
+        %>
+        <span class="ui tiny <%= verify_label_color %> label">
+          <i class="<%= verify_icon %> icon"></i>
+          <%= verify_status %>
+        </span>
+      </div>
+      <div class="inline fields">
+        <label>角色</label>
+        <div class="field">
+          <div class="ui radio checkbox radio-role">
+            <input type="radio" name="role" value="student" required>
+            <label>学生</label>
+          </div>
+        </div>
+        <div class="field">
+          <div class="ui radio checkbox radio-role">
+            <input type="radio" name="role" value="teacher" required>
+            <label>教师</label>
+          </div>
+        </div>
+        <div class="field">
+          <div class="ui radio checkbox radio-role">
+            <input type="radio" name="role" value="other" required>
+            <label>其它</label>
+          </div>
+        </div>
+      </div>
+      <div class="field" data-role="student|teacher|other">
+        <label for="real_name">真实姓名</label>
+        <input type="text" id="real_name" name="real_name" value="<%= identity && identity.real_name %>" required>
+      </div>
+      <div class="field" data-role="student">
+        <label for="graduation_year">高中毕业年份</label>
+        <input type="number" id="graduation_year" name="graduation_year" value="<%= identity && identity.graduation_year %>">
+      </div>
+      <% if (user.allowedManage && identity) { %>
+        <div class="inline field">
+          <label>审核选项</label>
+          <a id="approve-button" class="ui positive mini compact button<% if (identity.status === 'approved') { %> disabled<% } %>">
+            <i class="checkmark icon"></i> 通过
+          </a>
+          <a id="reject-button" class="ui negative mini compact button<% if (identity.status === 'rejected') { %> disabled<% } %>">
+            <i class="remove icon"></i> 不通过
+          </a>
+        </div>
+        <script>
+          function verify_callback(data) {
+            if (data.error) {
+              alert(data.error);
+            } else {
+              location.href = location.href;
+            }
+          }
+          $('#approve-button').click(function () {
+            $.post(<%- serializejs(syzoj.utils.makeUrl(['api', 'user', edited_user.id, 'verify', 'approve'])) %>, verify_callback);
+          });
+          $('#reject-button').click(function () {
+            $.post(<%- serializejs(syzoj.utils.makeUrl(['api', 'user', edited_user.id, 'verify', 'reject'])) %>, verify_callback);
+          });
+        </script>
+      <% } %>
+    </div>
+    <div style="text-align: center; margin-top: 30px; ">
+      <button id="submit-button" type="submit" class="ui blue labeled icon button">
+        <i class="ui icon checkmark"></i> 提交
+      </button>
+      <a href="<%= syzoj.utils.makeUrl(['user', edited_user.id, 'edit']) %>" class="ui labeled icon button">
+        <i class="ui icon arrow left"></i> 返回
+      </a>
+    </div>
+	</form>
+</div>
+<style>
+  .field[data-role] {
+    display: none;
+  }
+</style>
+<script>
+  $(function () {
+    let verify_status = <%- serializejs(identity ? identity.status : null) %>;
+    let current_role = <%- serializejs(identity ? identity.role : null) %>;
+    let allowed_manage = <%- serializejs(user.allowedManage) %>;
+
+    function roleChangeHandler() {
+      $('.field[data-role]').each((index, el) => {
+        let $el = $(el);
+        if ($el.attr('data-role').split('|').includes(current_role)) {
+          $el.show();
+        } else {
+          $el.hide();
+        }
+      });
+    }
+
+    $('.ui.radio-role.checkbox').checkbox({
+      onChecked() {
+        current_role = this.value;
+        roleChangeHandler();
+      }
+    });
+    
+    $('.ui.radio-role.checkbox').each((index, el) => {
+      let $el = $(el);
+      if ($el.find('input').val() === current_role) {
+        $el.checkbox('check');
+      } else {
+        $el.checkbox('uncheck');
+      }
+    });
+
+    if (verify_status === 'approved' && !allowed_manage) {
+      $('#form input').prop('readonly', true);
+      $('#submit-button').prop('disabled', true);
+    }
+  });
+</script>
+<% include footer %>

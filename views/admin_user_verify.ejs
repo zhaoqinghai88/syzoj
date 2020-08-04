@@ -1,0 +1,65 @@
+<%
+this.adminPage = 'user_verify';
+%>
+<% include admin_header %>
+
+<div id="vueApp">
+  <table class="ui center aligned celled table table_codes">
+    <thead>
+      <tr>
+        <th>用户</th>
+        <th>时间</th>
+        <th>认证信息</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="identity of items">
+        <td>
+          <a :href="'/user/' + identity.user.id" target="_blank">{{ identity.user.username }}</a>
+        </td>
+        <td>{{ identity.update_time }}</td>
+        <td>
+          <div>角色：{{ roleNames[identity.role] }}</div>
+          <div>真实姓名：{{ identity.real_name }}</div>
+          <div v-if="identity.role === 'student'">高中毕业年份：{{ identity.graduation_year }}</div>
+        </td>
+        <td>
+          <a class="ui positive mini compact button" @click="setStatus(identity, 'approve')">
+            <i class="checkmark icon"></i> 通过
+          </a>
+          <a class="ui negative mini compact button" @click="setStatus(identity, 'reject')">
+            <i class="remove icon"></i> 不通过
+          </a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script src="<%- lib('vue/2.5.21/vue.min.js') %>"></script>
+<script>
+  let app = new Vue({
+    el: '#vueApp',
+    data: {
+      items: <%- serializejs(items) %>,
+      roleNames: {
+        student: '学生',
+        teacher: '教师',
+        other: '其它'
+      }
+    },
+    methods: {
+      setStatus(identity, action) {
+        $.post(`/api/user/${identity.user_id}/verify/${action}`, data => {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            this.items.splice(this.items.indexOf(identity), 1);
+          }
+        });
+      }
+    }
+  });
+</script>
+<% include admin_footer %>

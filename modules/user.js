@@ -4,6 +4,9 @@ const RatingCalculation = syzoj.model('rating_calculation');
 const RatingHistory = syzoj.model('rating_history');
 const Contest = syzoj.model('contest');
 const ContestPlayer = syzoj.model('contest_player');
+const UserIdentity = syzoj.model('user-identity');
+
+const { assert } = syzoj.utils;
 
 // Ranklist
 app.get('/ranklist', async (req, res) => {
@@ -163,6 +166,7 @@ app.get('/user/:id/edit', async (req, res) => {
     }
 
     user.privileges = await user.getPrivileges();
+    user.identity = await user.getIdentity();
 
     res.locals.user.allowedManage = await res.locals.user.hasPrivilege('manage_user');
 
@@ -182,6 +186,125 @@ app.get('/forget', async (req, res) => {
   res.render('forget');
 });
 
+app.get('/user/:id/verify', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id);
+    let user = await User.findById(id);
+    if (!user) throw new ErrorMessage('无此用户。');
+
+    let allowedEdit = await user.isAllowedEditBy(res.locals.user);
+    if (!allowedEdit) {
+      throw new ErrorMessage('您没有权限进行此操作。');
+    }
+
+    let identity = await user.getIdentity();
+
+    res.locals.user.allowedManage = await res.locals.user.hasPrivilege('manage_user');
+
+    res.render('user_verify', {
+      edited_user: user,
+      identity: identity
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.post('/user/:id/verify', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id);
+    let user = await User.findById(id);
+    if (!user) throw new ErrorMessage('无此用户。');
+
+    let allowedEdit = await user.isAllowedEditBy(res.locals.user);
+    if (!allowedEdit) {
+      throw new ErrorMessage('您没有权限进行此操作。');
+    }
+    
+    let allowedManage = res.locals.user.allowedManage = await res.locals.user.hasPrivilege('manage_user');
+
+    let identity = await user.getIdentity();
+
+    if (identity) {
+      if (identity.status === 'approved' && !allowedManage) throw new ErrorMessage('您已经进行了实名认证。');
+    } else {
+      identity = UserIdentity.create({
+        user_id: user.id,
+        creation_time: new Date()
+      });
+    }
+
+    assert(['student', 'teacher', 'other'].includes(req.body.role), `找不到 ${req.body.role} 对应的角色。`);
+    identity.role = req.body.role;
+
+    assert(req.body.real_name, '真实姓名不能为空。');
+    identity.real_name = req.body.real_name;
+
+    switch (identity.role) {
+      case 'student': {
+        let year = parseInt(req.body.graduation_year);
+        assert(Number.isInteger(year), '高中毕业年份必须是整数。');
+        identity.graduation_year = year;
+        break;
+      }
+      case 'teacher': break;
+      case 'other': break;
+    }
+
+    identity.update_time = new Date();
+
+    if (allowedManage) {
+      identity.status = 'approved';
+      identity.review_time = new Date();
+    } else if (identity.status === 'rejected') {
+      identity.status = 'pending';
+      identity.review_time = null;
+    }
+
+    await identity.save();
+
+    res.render('user_verify', {
+      edited_user: user,
+      identity: identity
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    });
+  }
+});
+
+app.post('/api/user/:id/verify/:action', async (req, res) => {
+  try {
+    let id = parseInt(req.params.id);
+    let user = await User.findById(id);
+    if (!user) throw new ErrorMessage('无此用户。');
+    
+    if (!await res.locals.user.hasPrivilege('manage_user')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let identity = await user.getIdentity();
+    if (!identity) throw new ErrorMessage('用户尚未进行实名认证。');
+
+    switch (req.params.action) {
+      case 'approve': identity.status = 'approved'; break;
+      case 'reject': identity.status = 'rejected'; break;
+      default: throw new ErrorMessage('参数错误。');
+    }
+
+    identity.review_time = new Date();
+
+    await identity.save();
+
+    res.send({ error: null });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({ error: e.message });
+  }
+});
 
 
 app.post('/user/:id/edit', async (req, res) => {
