@@ -721,24 +721,30 @@ app.get('/admin/user_verify', async (req, res) => {
   try {
     if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_user')) throw new ErrorMessage('您没有权限进行此操作。');
 
-    let items = await UserIdentity.find({ status: 'pending' });
-
-    res.render('admin_user_verify', {
-      items: await Promise.all(items.map(async identity => {
-        let user = await User.findById(identity.user_id);
-        identity.user = {
-          id: user.id,
-          username: user.username
-        };
-        identity.creation_time = syzoj.utils.formatDate(identity.creation_time.getTime() / 1000);
-        identity.update_time = syzoj.utils.formatDate(identity.update_time.getTime() / 1000);
-        return identity;
-      }))
-    });
+    res.render('admin_user_verify');
   } catch (e) {
     syzoj.log(e);
     res.render('error', {
       err: e
     })
+  }
+});
+
+app.get('/api/admin/user_verify', async (req, res) => {
+  try {
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_user')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let items = await UserIdentity.find({ where: '`status` IN ("pending", "rejected")' });
+
+    res.send({
+      items: await items.mapAsync(async identity => {
+        await identity.loadRelationships();
+        return identity.toJSON();
+      }),
+      stat: await UserIdentity.getStatistics()
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({ error: e.message });
   }
 });

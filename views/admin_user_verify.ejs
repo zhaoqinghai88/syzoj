@@ -3,20 +3,44 @@ this.adminPage = 'user_verify';
 %>
 <% include admin_header %>
 
+<style>
+  .stat>span:not(:first-child) {
+    margin-left: 2em;
+  }
+  .stat>span>strong {
+    margin-right: 1em;
+  }
+</style>
+
 <div id="vueApp">
+  <div v-if="stat" class="stat">
+    <span>
+      <strong>已认证</strong>
+      {{ stat.approved }} / {{ stat.total }}
+    </span>
+    <span>
+      <strong>待审核</strong>
+      {{ stat.pending }}
+    </span>
+    <span>
+      <strong>审核未通过</strong>
+      {{ stat.rejected }}
+    </span>
+  </div>
   <table class="ui center aligned celled table table_codes">
     <thead>
       <tr>
         <th>用户</th>
         <th>时间</th>
         <th>认证信息</th>
+        <th>审核状态</th>
         <th>操作</th>
       </tr>
     </thead>
     <tbody>
       <tr v-for="identity of items">
         <td>
-          <a :href="'/user/' + identity.user.id" target="_blank">{{ identity.user.username }}</a>
+          <a :href="`/user/${identity.user.id}`" target="_blank">{{ identity.user.username }}</a>
         </td>
         <td>{{ identity.update_time }}</td>
         <td>
@@ -25,11 +49,17 @@ this.adminPage = 'user_verify';
           <div v-if="identity.role === 'student'">高中毕业年份：{{ identity.graduation_year }}</div>
         </td>
         <td>
-          <a class="ui positive mini compact button" @click="setStatus(identity, 'approve')">
-            <i class="checkmark icon"></i> 通过
+          <user-verify-status-label :status="identity.status"></user-verify-status-label>
+        </td>
+        <td>
+          <a class="ui primary mini circular icon button" :href="`/user/${identity.user.id}/verify`" target="_blank">
+            <i class="edit icon"></i>
           </a>
-          <a class="ui negative mini compact button" @click="setStatus(identity, 'reject')">
-            <i class="remove icon"></i> 不通过
+          <a v-if="identity.status !== 'approved'" class="ui positive mini circular icon button" @click="setStatus(identity, 'approve')">
+            <i class="checkmark icon"></i>
+          </a>
+          <a v-if="identity.status !== 'rejected'" class="ui negative mini circular icon button" @click="setStatus(identity, 'reject')">
+            <i class="remove icon"></i>
           </a>
         </td>
       </tr>
@@ -38,24 +68,41 @@ this.adminPage = 'user_verify';
 </div>
 
 <script src="<%- lib('vue/2.5.21/vue.min.js') %>"></script>
+
+<% include user_verify_status_label %>
+
 <script>
   let app = new Vue({
     el: '#vueApp',
     data: {
-      items: <%- serializejs(items) %>,
+      items: [],
+      stat: null,
       roleNames: {
         student: '学生',
         teacher: '教师',
         other: '其它'
       }
     },
+    mounted() {
+      this.loadData();
+    },
     methods: {
-      setStatus(identity, action) {
-        $.post(`/api/user/${identity.user_id}/verify/${action}`, data => {
+      loadData() {
+        $.get('/api/admin/user_verify', data => {
           if (data.error) {
             alert(data.error);
           } else {
-            this.items.splice(this.items.indexOf(identity), 1);
+            this.items = data.items;
+            this.stat = data.stat;
+          }
+        });
+      },
+      setStatus(identity, action) {
+        $.post(`/api/user/${identity.user.id}/verify/${action}`, data => {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            this.loadData();
           }
         });
       }
