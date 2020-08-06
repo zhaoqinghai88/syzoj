@@ -197,13 +197,12 @@ app.get('/user/:id/verify', async (req, res) => {
       throw new ErrorMessage('您没有权限进行此操作。');
     }
 
-    let identity = await user.getIdentity();
-
-    res.locals.user.allowedManage = await res.locals.user.hasPrivilege('manage_user');
+    let identity = await user.getIdentity(true);
 
     res.render('user_verify', {
       edited_user: user,
-      identity: identity
+      identity: identity,
+      allowedManage: await res.locals.user.hasPrivilege('manage_user')
     });
   } catch (e) {
     syzoj.log(e);
@@ -213,28 +212,21 @@ app.get('/user/:id/verify', async (req, res) => {
   }
 });
 
-app.post('/user/:id/verify', async (req, res) => {
+app.post('/api/user/:id/verify', async (req, res) => {
   try {
     let id = parseInt(req.params.id);
     let user = await User.findById(id);
     if (!user) throw new ErrorMessage('无此用户。');
 
     let allowedEdit = await user.isAllowedEditBy(res.locals.user);
-    if (!allowedEdit) {
-      throw new ErrorMessage('您没有权限进行此操作。');
-    }
-    
-    let allowedManage = res.locals.user.allowedManage = await res.locals.user.hasPrivilege('manage_user');
+    if (!allowedEdit) throw new ErrorMessage('您没有权限进行此操作。');
 
-    let identity = await user.getIdentity();
+    let identity = await user.getIdentity(true);
 
-    if (identity) {
-      if (identity.status === 'approved' && !allowedManage) throw new ErrorMessage('您已经进行了实名认证。');
-    } else {
-      identity = UserIdentity.create({
-        user_id: user.id,
-        creation_time: new Date()
-      });
+    let allowedManage = await res.locals.user.hasPrivilege('manage_user');
+
+    if (identity.status === 'approved' && !allowedManage) {
+      throw new ErrorMessage('您已经进行了实名认证。');
     }
 
     assert(['student', 'teacher', 'other'].includes(req.body.role), `找不到 ${req.body.role} 对应的角色。`);
@@ -266,15 +258,10 @@ app.post('/user/:id/verify', async (req, res) => {
 
     await identity.save();
 
-    res.render('user_verify', {
-      edited_user: user,
-      identity: identity
-    });
+    res.send({ error: null, identity: identity.toJSON() });
   } catch (e) {
     syzoj.log(e);
-    res.render('error', {
-      err: e
-    });
+    res.send({ error: e.message });
   }
 });
 
@@ -299,7 +286,7 @@ app.post('/api/user/:id/verify/:action', async (req, res) => {
 
     await identity.save();
 
-    res.send({ error: null });
+    res.send({ error: null, identity: identity.toJSON() });
   } catch (e) {
     syzoj.log(e);
     res.send({ error: e.message });

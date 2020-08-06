@@ -261,7 +261,19 @@ export default class User extends Model {
     return null;
   }
 
-  async getIdentity(): Promise<UserIdentity> {
-    return UserIdentity.findOne({ user_id: this.id });
+  async getIdentity(createIfNotExist = false): Promise<UserIdentity> {
+    let identity = await UserIdentity.findOne({ user_id: this.id });
+
+    if (!identity && createIfNotExist) {
+      identity = UserIdentity.create({
+        user_id: this.id,
+        status: null,
+        creation_time: new Date()
+      });
+    }
+
+    if (identity) identity.user = this;
+
+    return identity;
   }
 }

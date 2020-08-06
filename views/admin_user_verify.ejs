@@ -41,7 +41,7 @@ this.adminPage = 'user_verify';
       </tr>
     </thead>
     <tbody>
-      <tr v-for="identity of items">
+      <tr v-for="identity of items" :key="identity.user.id">
         <td>
           <a :href="`/user/${identity.user.id}`" target="_blank">{{ identity.user.username }}</a>
         </td>
@@ -105,7 +105,9 @@ this.adminPage = 'user_verify';
           if (data.error) {
             alert(data.error);
           } else {
-            this.loadData();
+            this.stat[identity.status]--;
+            Object.assign(identity, data.identity);
+            this.stat[identity.status]++;
           }
         });
       }
