@@ -13,18 +13,21 @@ this.adminPage = 'user_verify';
 </style>
 
 <div id="vueApp">
-  <div v-if="stat" class="stat">
+  <div class="stat">
     <span>
       <strong>已认证</strong>
-      {{ stat.approved }} / {{ stat.total }}
+      {{ stat ? `${stat.approved} / ${stat.total}` : '--' }}
     </span>
     <span>
       <strong>待审核</strong>
-      {{ stat.pending }}
+      {{ stat ? stat.pending : '--' }}
     </span>
     <span>
       <strong>审核未通过</strong>
-      {{ stat.rejected }}
+      {{ stat ? stat.rejected : '--' }}
+    </span>
+    <span class="ui mini compact button" @click="loadData()">
+      <i class="sync icon"></i> 刷新
     </span>
   </div>
   <table class="ui center aligned celled table table_codes">
