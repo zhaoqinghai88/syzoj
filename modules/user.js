@@ -251,7 +251,7 @@ app.post('/api/user/:id/verify', async (req, res) => {
     if (allowedManage) {
       identity.status = 'approved';
       identity.review_time = new Date();
-    } else if (identity.status === 'rejected') {
+    } else {
       identity.status = 'pending';
       identity.review_time = null;
     }
