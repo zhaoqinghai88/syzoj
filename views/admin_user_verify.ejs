@@ -49,7 +49,10 @@ this.adminPage = 'user_verify';
         <td>
           <div>角色：{{ roleNames[identity.role] }}</div>
           <div>真实姓名：{{ identity.real_name }}</div>
-          <div v-if="identity.role === 'student'">高中毕业年份：{{ identity.graduation_year }}</div>
+          <template v-if="identity.role === 'student'">
+            <div>高中毕业：{{ identity.graduation_year }} 年</div>
+            <div>当前年级：{{ GradeCalc.getGrade(identity.graduation_year) }}</div>
+          </template>
         </td>
         <td>
           <user-verify-status-label :status="identity.status"></user-verify-status-label>
@@ -71,6 +74,7 @@ this.adminPage = 'user_verify';
 </div>
 
 <script src="<%- lib('vue/2.5.21/vue.min.js') %>"></script>
+<script src="<%= syzoj.utils.makeUrl(['self', 'grade-calc.js']) %>"></script>
 
 <% include user_verify_status_label %>
 
