@@ -343,6 +343,7 @@ app.post('/user/:id/edit', async (req, res) => {
     if (user.id === res.locals.user.id) res.locals.user = user;
 
     user.privileges = await user.getPrivileges();
+    user.identity = await user.getIdentity();
     res.locals.user.allowedManage = allowedManage;
 
     res.render('user_edit', {
@@ -351,6 +352,7 @@ app.post('/user/:id/edit', async (req, res) => {
     });
   } catch (e) {
     user.privileges = await user.getPrivileges();
+    user.identity = await user.getIdentity();
     res.locals.user.allowedManage = await res.locals.user.hasPrivilege('manage_user');
 
     res.render('user_edit', {
