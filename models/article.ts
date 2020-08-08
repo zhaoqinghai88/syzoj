@@ -88,20 +88,22 @@ export default class Article extends Model {
 
   async updateViews(user: User) {
     if (!user) return;
+
     const data = {
       article_id: this.id,
       user_id: user.id
     };
-    let userView = await ArticleUserView.findOne(data);
+
+    let userView = await ArticleUserView.findOne({ where: data });
+
     if (!userView) {
       userView = await ArticleUserView.create(data);
-      await userView.save();
       this.views += 1;
       await this.save();
-      return true;
-    } else {
-      return false;
     }
+
+    userView.time = new Date();
+    await userView.save();
   }
 
   async delete() {
