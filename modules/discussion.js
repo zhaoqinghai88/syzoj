@@ -2,9 +2,17 @@ let Problem = syzoj.model('problem');
 let Article = syzoj.model('article');
 let ArticleComment = syzoj.model('article-comment');
 let User = syzoj.model('user');
+let Contest = syzoj.model('contest');
 
-const forums = ['global', 'announcements', 'problems', 'solutions'];
-const problem_forums = ['problems', 'solutions'];
+const forum_list = syzoj.forum_list = [
+  { name: 'global', title: '全局版块', icon: 'world', default: true },
+  ...syzoj.config.discussion_forums,
+  { name: 'problems', title: '题目', icon: 'book' },
+  { name: 'solutions', title: '题解', icon: 'code' }
+];
+const forum_map = syzoj.forum_map = new Map(forum_list.map(forum => [forum.name, forum]));
+const forums = forum_list.map(({ name }) => name);
+const problem_forums = syzoj.problem_forums = ['problems', 'solutions'];
 
 app.get('/discussion/:type?', async (req, res) => {
   try {
@@ -98,10 +106,16 @@ app.get('/article/:id', async (req, res) => {
       await comment.loadRelationships();
     }
 
-    let problem = null;
+    let problem, contest;
     if (article.problem_id) {
       problem = article.problem = await Problem.findById(article.problem_id);
-      if (!await problem.isAllowedUseBy(res.locals.user)) {
+      if (req.query.contest_id) {
+        contest = await Contest.findById(req.query.contest_id);
+        if (!contest) throw new ErrorMessage('无此比赛。');
+        contest.problems_id = await contest.getProblems();
+        if (!contest.problems_id.includes(problem.id)) throw new ErrorMessage('比赛中无此题目。');
+        if (!contest.allowedSeeingSolution()) throw new ErrorMessage('您没有权限进行此操作。');
+      } else if (!await problem.isAllowedUseBy(res.locals.user)) {
         throw new ErrorMessage('您没有权限进行此操作。');
       }
     }
@@ -116,7 +130,8 @@ app.get('/article/:id', async (req, res) => {
       paginate: paginate,
       problem: problem,
       commentsCount: commentsCount,
-      is_edit: false
+      is_edit: false,
+      contest: contest
     });
   } catch (e) {
     syzoj.log(e);
@@ -146,6 +161,9 @@ app.get('/article/:id/edit', async (req, res) => {
       if (problem_forums.includes(forum)) {
         let problem = await Problem.findById(problem_id);
         if (!problem) throw new ErrorMessage("无此题目。");
+        if (!await problem.isAllowedUseBy(res.locals.user)) {
+          throw new ErrorMessage('您没有权限进行此操作。');
+        }
         article.problem_id = problem.id;
         article.problem = problem;
       }

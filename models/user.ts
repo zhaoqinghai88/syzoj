@@ -8,6 +8,7 @@ import UserPrivilege from "./user_privilege";
 import Article from "./article";
 import TodoList from "./todo-list";
 import UserRestriction from "./user-restriction";
+import UserIdentity from "./user-identity";
 
 @TypeORM.Entity()
 export default class User extends Model {
@@ -258,5 +259,21 @@ export default class User extends Model {
     if (a) return a.language;
 
     return null;
+  }
+
+  async getIdentity(createIfNotExist = false): Promise<UserIdentity> {
+    let identity = await UserIdentity.findOne({ user_id: this.id });
+
+    if (!identity && createIfNotExist) {
+      identity = UserIdentity.create({
+        user_id: this.id,
+        status: null,
+        creation_time: new Date()
+      });
+    }
+
+    if (identity) identity.user = this;
+
+    return identity;
   }
 }

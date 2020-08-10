@@ -10,6 +10,7 @@ import Contest from "./contest";
 import ProblemTag from "./problem_tag";
 import ProblemTagMap from "./problem_tag_map";
 import SubmissionStatistics, { StatisticsType } from "./submission_statistics";
+import { Status } from "./interfaces";
 
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -338,7 +339,7 @@ export default class Problem extends Model {
   async resetSubmissionCount() {
     await syzoj.utils.lock(['Problem::resetSubmissionCount', this.id], async () => {
       this.submit_num = await JudgeState.count({ problem_id: this.id, type: TypeORM.Not(1) });
-      this.ac_num = await JudgeState.count({ score: 100, problem_id: this.id, type: TypeORM.Not(1) });
+      this.ac_num = await JudgeState.count({ status: Status.ACCEPTED, problem_id: this.id, type: TypeORM.Not(1) });
       await this.save();
     });
   }

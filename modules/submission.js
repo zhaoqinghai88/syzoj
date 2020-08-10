@@ -40,7 +40,7 @@ app.get('/submissions', async (req, res) => {
     }
 
     if (!req.query.contest) {
-      query.andWhere('type = 0');
+      query.andWhere('type != 1');
     } else {
       const contestId = Number(req.query.contest);
       const contest = await Contest.findById(contestId);
@@ -48,7 +48,7 @@ app.get('/submissions', async (req, res) => {
       if ((contest.ended && contest.is_public) || // If the contest is ended and is not hidden
         (curUser && await contest.isSupervisior(curUser)) // Or if the user have the permission to check
       ) {
-        query.andWhere('type = 1');
+        query.andWhere('type = :type', { type: contest.getSubmissionType() });
         query.andWhere('type_info = :type_info', { type_info: contestId });
         inContest = true;
       } else {

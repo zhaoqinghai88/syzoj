@@ -10,4 +10,7 @@ export default class ArticleUserView extends Model {
   @TypeORM.Index()
   @TypeORM.PrimaryColumn({ type: "integer" })
   user_id: number;
+
+  @TypeORM.Column({ nullable: true, type: "datetime" })
+  time: Date;
 };

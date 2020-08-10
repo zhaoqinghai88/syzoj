@@ -879,12 +879,27 @@ app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1
       let problems_id = await contest.getProblems();
       if (!problems_id.includes(id)) throw new ErrorMessage('无此题目。');
 
-      judge_state.type = 1;
+      judge_state.type = contest.getSubmissionType();
       judge_state.type_info = contest_id;
 
       await judge_state.save();
     } else {
       if (!await problem.isAllowedUseBy(curUser)) throw new ErrorMessage('您没有权限进行此操作。');
+      if (!await problem.isAllowedEditBy(curUser)) {
+        let contests = await Contest.createQueryBuilder()
+          .select()
+          .where("`type` = 'crt'")
+          .andWhere("`is_public` = 1")
+          .andWhere("`start_time` <= :now", { now: Math.floor(Date.now() / 1000) })
+          .andWhere("`end_time` > :now")
+          .getMany();
+
+        for (let contest of contests) {
+          if ((await contest.getProblems()).includes(problem.id)) {
+            throw new ErrorMessage('请到对应的订正赛中提交。');
+          }
+        }
+      }
       judge_state.type = 0;
       await judge_state.save();
     }
@@ -1144,7 +1159,15 @@ app.get('/problem/:id/solutions', async (req, res) => {
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');
-    if (!await problem.isAllowedUseBy(res.locals.user)) {
+
+    let contest;
+    if (req.query.contest_id) {
+      contest = await Contest.findById(req.query.contest_id);
+      if (!contest) throw new ErrorMessage('无此比赛。');
+      contest.problems_id = await contest.getProblems();
+      if (!contest.problems_id.includes(problem.id)) throw new ErrorMessage('比赛中无此题目。');
+      if (!contest.allowedSeeingSolution()) throw new ErrorMessage('您没有权限进行此操作。');
+    } else if (!await problem.isAllowedUseBy(res.locals.user)) {
       throw new ErrorMessage('您没有权限进行此操作。');
     }
 
@@ -1160,7 +1183,8 @@ app.get('/problem/:id/solutions', async (req, res) => {
       articles: articles,
       paginate: paginate,
       problem: problem,
-      forum: 'solutions'
+      forum: 'solutions',
+      contest: contest
     });
   } catch (e) {
     syzoj.log(e);

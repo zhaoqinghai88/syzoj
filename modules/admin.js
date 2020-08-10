@@ -9,6 +9,7 @@ const RatingHistory = syzoj.model('rating_history');
 let ContestPlayer = syzoj.model('contest_player');
 const InvitationCode = syzoj.model('invitation_code');
 const InvitationCodeUsername = syzoj.model('invitation_code_username');
+const UserIdentity = syzoj.model('user-identity');
 const calcRating = require('../libs/rating');
 
 const TypeORM = require('typeorm');
@@ -713,5 +714,37 @@ app.post('/admin/bulk_public', async (req, res) => {
       error_info: e.message,
       status: 'failed'
     });
+  }
+});
+
+app.get('/admin/user_verify', async (req, res) => {
+  try {
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_user')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    res.render('admin_user_verify');
+  } catch (e) {
+    syzoj.log(e);
+    res.render('error', {
+      err: e
+    })
+  }
+});
+
+app.get('/api/admin/user_verify', async (req, res) => {
+  try {
+    if (!res.locals.user || !await res.locals.user.hasPrivilege('manage_user')) throw new ErrorMessage('您没有权限进行此操作。');
+
+    let items = await UserIdentity.find({ where: '`status` IN ("pending", "rejected")' });
+
+    res.send({
+      items: await items.mapAsync(async identity => {
+        await identity.loadRelationships();
+        return identity.toJSON();
+      }),
+      stat: await UserIdentity.getStatistics()
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({ error: e.message });
   }
 });

@@ -153,5 +153,12 @@
     "title": "语录",
     "title_original": "一言（ヒトコト）",
     "enabled": false
-  }
+  },
+  "discussion_forums": [
+    {
+      "name": "announcements",
+      "title": "公告栏",
+      "icon": "bullhorn"
+    }
+  ]
 }
