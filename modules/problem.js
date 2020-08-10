@@ -348,9 +348,8 @@ app.get('/problems/tag/:tagIDs', async (req, res, next) => {
   }
 });
 
-app.get('/problem/:id', async (req, res) => {
+app.get('/problem/:id', app.useRestriction, async (req, res) => {
   try {
-    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');
@@ -398,9 +397,8 @@ app.get('/problem/:id', async (req, res) => {
   }
 });
 
-app.get('/problem/:id/export', async (req, res) => {
+app.get('/problem/:id/export', app.useRestriction, async (req, res) => {
   try {
-    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。');
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');
@@ -437,9 +435,8 @@ app.get('/problem/:id/export', async (req, res) => {
   }
 });
 
-app.get('/problem/:id/edit', async (req, res) => {
+app.get('/problem/:id/edit', app.useRestriction, async (req, res) => {
   try {
-    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id) || 0;
     let problem = await Problem.findById(id);
 
@@ -543,7 +540,7 @@ app.post('/problem/:id/edit', async (req, res) => {
   }
 });
 
-app.get('/problem/:id/import', async (req, res) => {
+app.get('/problem/:id/import', app.useRestriction, async (req, res) => {
   try {
     let id = parseInt(req.params.id) || 0;
     let problem = await Problem.findById(id);
@@ -805,7 +802,7 @@ app.post('/problem/:id/dis_public_data', async (req, res) => {
 });
 
 
-app.post('/problem/:id/submit', app.multer.fields([{ name: 'answer', maxCount: 1 }]), async (req, res) => {
+app.post('/problem/:id/submit', app.useRestriction, app.multer.fields([{ name: 'answer', maxCount: 1 }]), async (req, res) => {
   try {
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
@@ -969,9 +966,8 @@ app.post('/problem/:id/delete', async (req, res) => {
   }
 });
 
-app.get('/problem/:id/testdata', async (req, res) => {
+app.get('/problem/:id/testdata', app.useRestriction, async (req, res) => {
   try {
-    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
 
@@ -1055,9 +1051,8 @@ function downloadOrRedirect(req, res, filename, sendName) {
   }
 }
 
-app.get('/problem/:id/testdata/download/:filename?', async (req, res) => {
+app.get('/problem/:id/testdata/download/:filename?', app.useRestriction, async (req, res) => {
   try {
-    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
 
@@ -1089,9 +1084,8 @@ app.get('/problem/:id/testdata/download/:filename?', async (req, res) => {
   }
 });
 
-app.get('/problem/:id/download/additional_file', async (req, res) => {
+app.get('/problem/:id/download/additional_file', app.useRestriction, async (req, res) => {
   try {
-    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
 
@@ -1152,10 +1146,8 @@ app.get('/problem/:id/statistics/:type', async (req, res) => {
   }
 });
 
-app.get('/problem/:id/solutions', async (req, res) => {
+app.get('/problem/:id/solutions', app.useRestriction, async (req, res) => {
   try {
-    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
-
     let id = parseInt(req.params.id);
     let problem = await Problem.findById(id);
     if (!problem) throw new ErrorMessage('无此题目。');

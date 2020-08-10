@@ -55,6 +55,9 @@ export default class User extends Model {
   @TypeORM.Column({ nullable: true, type: "boolean" })
   is_rated: boolean;
 
+  @TypeORM.Column({ nullable: true, type: "boolean", default: false })
+  is_verified: boolean;
+
   @TypeORM.Column({ nullable: true, type: "boolean", default: true })
   public_email: boolean;
 
@@ -275,5 +278,11 @@ export default class User extends Model {
     if (identity) identity.user = this;
 
     return identity;
+  }
+
+  async updateVerifyStatus(is_verified: boolean): Promise<void> {
+    if (is_verified === this.is_verified) return;
+    this.is_verified = is_verified;
+    await this.save();
   }
 }

@@ -258,6 +258,8 @@ app.post('/api/user/:id/verify', async (req, res) => {
 
     await identity.save();
 
+    await user.updateVerifyStatus(identity.status === 'approved');
+
     res.send({ error: null, identity: identity.toJSON() });
   } catch (e) {
     syzoj.log(e);
@@ -285,6 +287,8 @@ app.post('/api/user/:id/verify/:action', async (req, res) => {
     identity.review_time = new Date();
 
     await identity.save();
+
+    await user.updateVerifyStatus(identity.status === 'approved');
 
     res.send({ error: null, identity: identity.toJSON() });
   } catch (e) {

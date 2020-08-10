@@ -270,6 +270,28 @@ global.syzoj = {
       next();
     });
 
+    // Visitor restriction & Force user verification
+    app.useRestriction = async (req, res, next) => {
+      let mode = syzoj.config.visitor_restriction;
+      let { user } = res.locals;
+
+      try {
+        if (mode && !user) {
+          throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
+        }
+        if (mode === 2 && !user.is_admin && !user.is_verified) {
+          throw new ErrorMessage('请实名认证后继续。', { '转到实名认证': syzoj.utils.makeUrl(['user', res.locals.user.id, 'verify']) });
+        }
+
+        return next();
+      } catch (e) {
+        syzoj.log(e);
+        res.render('error', {
+          err: e
+        });
+      }
+    };
+
     app.use((req, res, next) => {
       res.locals.req = req;
       res.locals.res = res;

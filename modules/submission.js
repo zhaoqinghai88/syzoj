@@ -152,9 +152,8 @@ app.get('/submissions', async (req, res) => {
   }
 });
 
-app.get('/submission/:id', async (req, res) => {
+app.get('/submission/:id', app.useRestriction, async (req, res) => {
   try {
-    if (syzoj.config.visitor_restriction && !res.locals.user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
     const id = parseInt(req.params.id);
     const judge = await JudgeState.findById(id);
     if (!judge) throw new ErrorMessage("提交记录 ID 不正确。");
