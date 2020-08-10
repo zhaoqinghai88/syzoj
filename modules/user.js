@@ -107,8 +107,12 @@ app.get('/user/:id', async (req, res) => {
     for (let article of user.articles) {
       if (article.problem_id) {
         article.problem = await Problem.findById(article.problem_id);
+        article.allowedVisit = await article.problem.isAllowedUseBy(user);
+      } else {
+        article.allowedVisit = true;
       }
     }
+    user.shown_articles = user.articles.filter(article => article.allowedVisit);
     user.allowedEdit = await user.isAllowedEditBy(res.locals.user);
 
     let statistics = await user.getStatistics();
