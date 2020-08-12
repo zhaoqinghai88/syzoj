@@ -3,7 +3,7 @@ import Model from "./common";
 import User from "./user";
 import QuoteFrom from "./quote-from";
 import QuoteUserVote from "./quote-user-vote";
-import { QuoteType, HitokotoQuoteContent, ImageQuoteContent, QuoteVoteSummary, QuoteVoteType, UserQuote, DialogItem } from "./interfaces";
+import { QuoteType, HitokotoQuoteContent, ImageQuoteContent, VoteSummary, VoteType, UserQuote, DialogItem } from "./interfaces";
 
 import * as fs from "fs-extra";
 import * as pathlib from "path";
@@ -155,10 +155,10 @@ export default class Quote extends Model {
     });
   }
 
-  async setVoteBy(user: User, vote: QuoteVoteType) {
+  async setVoteBy(user: User, vote: VoteType) {
     let voteItem = await this.getVoteBy(user);
 
-    if (vote !== QuoteVoteType.none) {
+    if (vote !== VoteType.none) {
       if (voteItem) {
         voteItem.vote = vote;
       } else {
@@ -176,16 +176,16 @@ export default class Quote extends Model {
     }
   }
 
-  async getVoteSummary(user: User): Promise<QuoteVoteSummary> {
+  async getVoteSummary(user: User): Promise<VoteSummary> {
     const voteItem = await this.getVoteBy(user);
     const [up, down] = await Promise.all(
-      [QuoteVoteType.up, QuoteVoteType.down].map(
+      [VoteType.up, VoteType.down].map(
         vote => QuoteUserVote.count({
           where: { quote_id: this.id, vote }
         })));
 
     return {
-      self: voteItem ? voteItem.vote : QuoteVoteType.none,
+      self: voteItem ? voteItem.vote : VoteType.none,
       total: { up, down }
     };
   }

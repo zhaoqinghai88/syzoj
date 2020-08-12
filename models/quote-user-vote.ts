@@ -1,6 +1,6 @@
 import * as TypeORM from "typeorm";
 import Model from "./common";
-import { QuoteVoteType } from "./interfaces";
+import { VoteType } from "./interfaces";
 
 @TypeORM.Entity()
 export default class QuoteUserVote extends Model {
@@ -11,5 +11,5 @@ export default class QuoteUserVote extends Model {
   user_id: number;
 
   @TypeORM.Column({ type: "integer" })
-  vote: QuoteVoteType;
+  vote: VoteType;
 }
