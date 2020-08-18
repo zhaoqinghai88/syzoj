@@ -160,5 +160,9 @@
       "title": "公告栏",
       "icon": "bullhorn"
     }
-  ]
+  ],
+  "calendar": {
+    "enable": false,
+    "api_url": ""
+  }
 }
