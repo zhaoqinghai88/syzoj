@@ -162,7 +162,7 @@
     }
   ],
   "calendar": {
-    "enable": false,
+    "enabled": false,
     "api_url": ""
   }
 }
