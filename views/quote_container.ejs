@@ -24,11 +24,11 @@
       <div class="vote" style="float: right;">
         <span>
           <i class="ui thumbs up link icon" :class="getVoteButtonClass(1)" @click="setVote(1)"></i>
-          <span class="count">{{ quote && quote.vote && quote.vote.total.up }}</span>
+          <span v-if="quote && quote.vote" class="count">{{ quote.vote.total.up }}</span>
         </span>
         <span>
           <i class="ui thumbs down link icon" :class="getVoteButtonClass(-1)" @click="setVote(-1)"></i>
-          <span class="count">{{ quote && quote.vote && quote.vote.total.down }}</span>
+          <span v-if="quote && quote.vote" class="count">{{ quote.vote.total.down }}</span>
         </span>
       </div>
       <i class="ui random link icon" :class="{ disabled: loading }" @click="fetch()"></i>
