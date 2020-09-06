@@ -58,16 +58,15 @@ export interface UserQuote {
   weight?: number;
 }
 
-export enum QuoteVoteType {
+export enum VoteType {
   up = 1,
-  down = -1,
-  none = 0
+  down = -1
 }
 
-export interface QuoteVoteSummary {
+export interface VoteSummary {
   self: number;
-  total: {
-    up: number;
-    down: number;
+  total?: {
+    up?: number;
+    down?: number;
   }
 }

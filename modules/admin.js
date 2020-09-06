@@ -10,6 +10,7 @@ let ContestPlayer = syzoj.model('contest_player');
 const InvitationCode = syzoj.model('invitation_code');
 const InvitationCodeUsername = syzoj.model('invitation_code_username');
 const UserIdentity = syzoj.model('user-identity');
+const Quote = syzoj.model('quote');
 const calcRating = require('../libs/rating');
 
 const TypeORM = require('typeorm');
@@ -325,6 +326,13 @@ app.post('/admin/other', async (req, res) => {
           s.code_length = Buffer.from(s.code).length;
           await s.save();
         }
+      }
+    } else if (req.body.type === 'reset_vote') {
+      for (const quote of await Quote.find()) {
+        await quote.updateVotes();
+      }
+      for (const article of await Article.find()) {
+        await article.updateVotes();
       }
     } else {
       throw new ErrorMessage("操作类型不正确");

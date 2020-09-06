@@ -145,7 +145,7 @@
                 :items="[
                   { text: '创建时间', value: 'creation_time' },
                   { text: '最后更新', value: 'update_time' },
-                  { text: '点赞数', value: 'vote.up' }
+                  { text: '点赞数', value: 'vote_up' }
                 ]"
                 v-model="sortKey"
                 @change="reloadList(true, true)"
@@ -756,9 +756,10 @@
               if (resp.error) {
                 reject(resp.error);
               } else {
-                let rank = 0, last = null;
+                let index = 0, rank = 0, last = null;
                 for (const item of resp.result) {
-                  if (!last || item.quote_count !== last.quote_count || item.vote_up_sum !== last.vote_up_sum) ++rank;
+                  ++index;
+                  if (!last || item.quote_count !== last.quote_count || item.vote_up_sum !== last.vote_up_sum) rank = index;
                   item.rank = rank;
                   last = item;
                 }

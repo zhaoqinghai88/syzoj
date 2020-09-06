@@ -56,7 +56,9 @@
           <th style="width: 20%; ">所属题目</th>
         <% } %>
         <th style="width: 10%; ">作者</th>
-        <th style="width: 10%; ">回复数</th>
+        <th style="width: 3%; "><i class="eye icon"></i></th>
+        <th style="width: 3%; "><i class="comment icon"></i></th>
+        <th style="width: 3%; "><i class="thumbs up icon"></i></th>
         <th style="width: 15%; ">最新回复</th>
       </tr>
     </thead>
@@ -68,12 +70,33 @@
               <td><a href="<%= get_list_url(article.forum, article.problem.id) %>"><%= article.problem.title %></a></td>
             <% } %>
             <td><a href="<%= syzoj.utils.makeUrl(['user', article.user_id]) %>"><%= article.user.username %></a><% if (article.user.nameplate) { %><%- article.user.nameplate %><% } %></td>
+            <td><%= article.views %></td>
             <td><%= article.comments_num %></td>
+            <td><%= article.vote_up %></td>
             <td><%= syzoj.utils.formatDate(article.sort_time) %></td>
         </tr>
     <% } %>
     </tbody>
   </table>
+  <style>
+    .stat-text {
+      display: inline-block;
+      position: relative;
+    }
+    .stat-label:not(:last-child) {
+      margin-right: .5em;
+    }
+    .stat-label>i.icon {
+      color: #666;
+    }
+  </style>
+  <script>
+    $(function () {
+      $('.stat-text').popup({
+        position: 'top center'
+      });
+    });
+  </script>
   <br>
   <% include page %>
   <% } else { %>

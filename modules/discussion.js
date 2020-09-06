@@ -99,7 +99,7 @@ app.get('/article/:id', app.useRestriction, async (req, res) => {
     });
 
     for (let comment of comments) {
-      comment.content = await syzoj.utils.markdown(comment.content);
+      comment.rendered_content = await syzoj.utils.markdown(comment.content);
       comment.allowedEdit = await comment.isAllowedEditBy(res.locals.user);
       await comment.loadRelationships();
     }
@@ -120,7 +120,7 @@ app.get('/article/:id', app.useRestriction, async (req, res) => {
 
     await article.updateViews(res.locals.user);
     
-    article.content = await syzoj.utils.markdown(article.content);
+    article.rendered_content = await syzoj.utils.markdown(article.content);
 
     res.render('article', {
       article: article,
@@ -311,6 +311,52 @@ app.post('/article/:article_id/comment/:id/delete', async (req, res) => {
     syzoj.log(e);
     res.render('error', {
       err: e
+    });
+  }
+});
+
+app.get('/api/article/:id/vote', async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id);
+    if (!article) throw new ErrorMessage('无此帖子。');
+
+    const result = await article.getVoteSummary(res.locals.user);
+
+    res.send({
+      error: null,
+      result
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
+    });
+  }
+});
+
+app.post('/api/article/:id/vote/:vote', async (req, res) => {
+  try {
+    const { user } = res.locals;
+    if (!user) throw new ErrorMessage('请登录后继续。', { '登录': syzoj.utils.makeUrl(['login'], { 'url': req.originalUrl }) });
+
+    const article = await Article.findById(req.params.id);
+    if (!article) throw new ErrorMessage('无此帖子。');
+
+    const voteType = parseInt(req.params.vote);
+    if (![1, -1, 0].includes(voteType)) throw new ErrorMessage('参数错误。');
+
+    await article.setVoteBy(user, voteType ? voteType : null);
+
+    const result = await article.getVoteSummary(user);
+
+    res.send({
+      error: null,
+      result
+    });
+  } catch (e) {
+    syzoj.log(e);
+    res.send({
+      error: e.message
     });
   }
 });
