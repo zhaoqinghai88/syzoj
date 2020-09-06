@@ -4,7 +4,6 @@ const pathlib = require('path');
 
 const User = syzoj.model('user');
 const Quote = syzoj.model('quote');
-const QuoteUserVote = syzoj.model('quote-user-vote');
 
 const { baseDir, isValidImageExt } = Quote;
 const { assert } = syzoj.utils;
@@ -150,7 +149,7 @@ app.post('/api/quote/:id/vote/:vote', async (req, res) => {
     const voteType = parseInt(req.params.vote);
     assert([1, -1, 0].includes(voteType));
 
-    await quote.setVoteBy(user, voteType);
+    await quote.setVoteBy(user, voteType ? voteType : null);
 
     const result = await quote.getVoteSummary(user);
 
@@ -233,25 +232,8 @@ app.get('/api/quote/list', async (req, res) => {
         setWhere('(id IN (SELECT DISTINCT quote_id AS id FROM quote_from WHERE `from` = :from))', { from });
       }
 
-      if (sort) {
-        assert(['creation_time', 'update_time', 'vote.up'].includes(sort));
-      } else {
-        sort = 'creation_time';
-      }
-      if (sort === 'vote.up') {
-        query
-          .leftJoin(qb => qb
-            .from(QuoteUserVote)
-            .select('quote_id')
-            .addSelect('COUNT(*)', 'vote_count')
-            .where('vote = 1')
-            .groupBy('quote_id'),
-            'v', 'v.quote_id = id')
-          .addSelect('vote_count')
-          .orderBy('vote_count', 'DESC');
-      } else {
-        query.orderBy(sort, 'DESC');
-      }
+      const sortKeys = ['creation_time', 'update_time', 'vote_up'];
+      query.orderBy(sortKeys.includes(sort) ? sort : sortKeys[0], 'DESC');
     }
 
     const count = await Quote.countForPagination(query);
@@ -401,8 +383,6 @@ app.post('/api/quote/:id/delete', async (req, res) => {
 
 app.get('/api/quote/leaderboards', async (req, res) => {
   try {
-    const { user } = res.locals;
-
     res.send({
       error: null,
       result: await Quote.getLeaderboards()

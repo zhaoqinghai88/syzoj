@@ -6,6 +6,7 @@
   font-size: 0.7em;
 }
 </style>
+<script src="<%- lib('vue/2.5.21/vue.min.js') %>"></script>
 <div class="padding">
   <% include discussion_breadcrumb %>
   <h1><%= article.title %></h1>
@@ -23,8 +24,72 @@
           <a style="margin-top: -4px; margin-right: 3px; " class="ui mini right floated labeled icon primary button" href="<%= get_problem_url() %>"><i class="ui left arrow icon"></i> 返回题目</a>
         <% } %>
  	</p>
-  <div class="ui existing segment">
-	  <div id="content" class="font-content"><%- article.content %></div>
+  <div class="ui top attached existing segment">
+	  <div id="content" class="font-content"><%- article.rendered_content %></div>
+  </div>
+  <div class="ui bottom attached secondary segment" style="padding: .6em 1em;">
+    <div id="voteContainer">
+      <span>
+        <i class="ui thumbs up icon" :class="getVoteButtonClass(1)" @click="setVote(1)"></i>
+        <span class="count" style="margin-left: -.1em;">{{ vote && vote.total.up }}</span>
+      </span>
+      <span>
+        <i class="ui thumbs down icon" :class="getVoteButtonClass(-1)" @click="setVote(-1)"></i>
+      </span>
+    </div>
+    <style>
+      #voteContainer>span {
+        display: inline-block;
+        margin-right: .5em;
+      }
+    </style>
+    <script>
+      let articleVote = new Vue({
+        el: '#voteContainer',
+        data: {
+          article_id: <%- serializejs(article.id) %>,
+          enabled: <%- serializejs(user !== null) %>,
+          vote: null
+        },
+        mounted() {
+          this.init();
+        },
+        methods: {
+          getVoteButtonClass(value) {
+            const list = [];
+            if (this.enabled && this.vote) {
+              const self = this.vote.self;
+              list.push('link');
+              list.push(self === value ? 'blue' : 'grey');
+            } else {
+              list.push('grey');
+              list.push('disabled');
+            }
+            return list;
+          },
+          init() {
+            $.get(`/api/article/${this.article_id}/vote`, resp => {
+              if (resp.error) {
+                console.error(resp.error);
+              } else {
+                this.vote = resp.result;
+              }
+            });
+          },
+          setVote(vote) {
+            if (!this.enabled) return;
+            if (this.vote.self === vote) vote = 0;
+            $.post(`/api/article/${this.article_id}/vote/${vote}`, resp => {
+              if (resp.error) {
+                console.error(resp.error);
+              } else {
+                this.vote = resp.result;
+              }
+            });
+          }
+        }
+      })
+    </script>
   </div>
   <% if (comments.length) { %>
   <div class="ui comments" style="max-width: none;">
@@ -39,7 +104,7 @@
           <div class="metadata">
             <span class="date"><%= syzoj.utils.formatDate(comment.public_time) %></span>
           </div>
-          <div class="text font-content" style="min-height: 19.5px; "><%- comment.content %></div>
+          <div class="text font-content" style="min-height: 19.5px; "><%- comment.rendered_content %></div>
           <% if (comment.allowedEdit) { %>
             <div class="actions"><a onclick="$('#modal-delete-<%= comment.id %>').modal('show')">删除</a></div>
             <div class="ui basic modal" id="modal-delete-<%= comment.id %>">

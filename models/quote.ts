@@ -52,6 +52,13 @@ export default class Quote extends Model {
   @TypeORM.Column({ type: 'datetime' })
   update_time: Date;
 
+  @TypeORM.Index()
+  @TypeORM.Column({ type: "integer" })
+  vote_up: number;
+
+  @TypeORM.Column({ type: "integer" })
+  vote_down: number;
+
   provider?: User;
   from?: string[];
 
@@ -124,14 +131,7 @@ export default class Quote extends Model {
       .addSelect('SUM(vote_up)', 'vote_up_sum')
       .innerJoin(qb => {
         return qb.from(Quote, "quote")
-          .select(["id", "vote_up"])
-          .leftJoin(qb => {
-            return qb.from(QuoteUserVote, "quote_user_vote")
-              .select("quote_id")
-              .addSelect("COUNT(*)", "vote_up")
-              .where("vote = 1")
-              .groupBy("quote_id");
-          }, "v", "v.quote_id = id");
+          .select(["id", "vote_up"]);
       }, "q", "q.id = quote_id")
       .groupBy("`from`")
       .orderBy("quote_count", "DESC")
@@ -148,17 +148,15 @@ export default class Quote extends Model {
 
   async getVoteBy(user: User): Promise<QuoteUserVote> {
     return await QuoteUserVote.findOne({
-      where: {
-        quote_id: this.id,
-        user_id: user.id
-      }
+      quote_id: this.id,
+      user_id: user.id
     });
   }
 
   async setVoteBy(user: User, vote: VoteType) {
     let voteItem = await this.getVoteBy(user);
 
-    if (vote !== VoteType.none) {
+    if (vote) {
       if (voteItem) {
         voteItem.vote = vote;
       } else {
@@ -174,19 +172,27 @@ export default class Quote extends Model {
         await voteItem.destroy();
       }
     }
+
+    await this.updateVotes();
+  }
+
+  async updateVotes() {
+    [this.vote_up, this.vote_down] = await Promise.all(
+      [VoteType.up, VoteType.down].map(type => QuoteUserVote.count({
+        quote_id: this.id,
+        vote: type
+      })));
+    await this.save();
   }
 
   async getVoteSummary(user: User): Promise<VoteSummary> {
     const voteItem = await this.getVoteBy(user);
-    const [up, down] = await Promise.all(
-      [VoteType.up, VoteType.down].map(
-        vote => QuoteUserVote.count({
-          where: { quote_id: this.id, vote }
-        })));
-
     return {
-      self: voteItem ? voteItem.vote : VoteType.none,
-      total: { up, down }
+      self: voteItem && voteItem.vote,
+      total: {
+        up: this.vote_up,
+        down: this.vote_down
+      }
     };
   }
 

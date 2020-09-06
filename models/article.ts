@@ -5,6 +5,8 @@ import User from "./user";
 import Problem from "./problem";
 import ArticleComment from "./article-comment";
 import ArticleUserView from "./article-user-view";
+import ArticleUserVote from "./article-user-vote";
+import { VoteType, VoteSummary } from "./interfaces";
 
 declare var syzoj: any;
 
@@ -56,6 +58,13 @@ export default class Article extends Model {
   @TypeORM.Column({ nullable: true, type: "boolean" })
   is_notice: boolean;
 
+  @TypeORM.Index()
+  @TypeORM.Column({ type: "integer" })
+  vote_up: number;
+
+  @TypeORM.Column({ type: "integer" })
+  vote_down: number;
+
   user?: User;
   problem?: Problem;
 
@@ -106,11 +115,64 @@ export default class Article extends Model {
     await userView.save();
   }
 
+  async getVoteBy(user: User): Promise<ArticleUserVote> {
+    return await ArticleUserVote.findOne({
+      article_id: this.id,
+      user_id: user.id
+    });
+  }
+
+  async setVoteBy(user: User, vote: VoteType) {
+    let voteItem = await this.getVoteBy(user);
+
+    if (vote) {
+      if (voteItem) {
+        voteItem.vote = vote;
+      } else {
+        voteItem = ArticleUserVote.create({
+          article_id: this.id,
+          user_id: user.id,
+          vote: vote
+        });
+      }
+      await voteItem.save();
+    } else {
+      if (voteItem) {
+        await voteItem.destroy();
+      }
+    }
+
+    await this.updateVotes();
+  }
+
+  async updateVotes() {
+    [this.vote_up, this.vote_down] = await Promise.all(
+      [VoteType.up, VoteType.down].map(type => ArticleUserVote.count({
+        article_id: this.id,
+        vote: type
+      })));
+    await this.save();
+  }
+
+  async getVoteSummary(user: User): Promise<VoteSummary> {
+    const voteItem = user && await this.getVoteBy(user);
+    return {
+      self: voteItem && voteItem.vote,
+      total: {
+        up: this.vote_up,
+        down: this.vote_down
+      }
+    };
+  }
+
   async delete() {
     await Promise.all((await ArticleComment.find({
       article_id: this.id
     })).map(comment => comment.destroy()));
     await ArticleUserView.delete({
+      article_id: this.id
+    });
+    await ArticleUserVote.delete({
       article_id: this.id
     });
     await this.destroy();
