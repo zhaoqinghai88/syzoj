@@ -59,10 +59,10 @@ export default class Article extends Model {
   is_notice: boolean;
 
   @TypeORM.Index()
-  @TypeORM.Column({ type: "integer" })
+  @TypeORM.Column({ type: "integer", default: 0 })
   vote_up: number;
 
-  @TypeORM.Column({ type: "integer" })
+  @TypeORM.Column({ type: "integer", default: 0 })
   vote_down: number;
 
   user?: User;

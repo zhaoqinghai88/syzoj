@@ -53,10 +53,10 @@ export default class Quote extends Model {
   update_time: Date;
 
   @TypeORM.Index()
-  @TypeORM.Column({ type: "integer" })
+  @TypeORM.Column({ type: "integer", default: 0 })
   vote_up: number;
 
-  @TypeORM.Column({ type: "integer" })
+  @TypeORM.Column({ type: "integer", default: 0 })
   vote_down: number;
 
   provider?: User;
